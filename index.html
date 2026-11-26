@@ -4075,7 +4075,22 @@
         return;
       }
 
-      if (acc.id === 'laila') {
+      const acc = appState.registeredAccounts.find(a =>
+        (a.username && a.username.toLowerCase() === username.toLowerCase()) ||
+        (a.name && a.name.toLowerCase() === username.toLowerCase())
+      );
+
+      if (!acc) {
+        if (fb) fb.textContent = '❌ Account not found. Please check your username or register a new gamer.';
+        return;
+      }
+
+      if (acc.id === 'derick') {
+        if (password !== ADMIN_PASSWORD) {
+          if (fb) fb.textContent = '🔒 Incorrect password for this user account.';
+          return;
+        }
+      } else if (acc.id === 'laila') {
         if (password.toLowerCase() !== LAILA_PASSWORD.toLowerCase()) {
           if (fb) fb.textContent = '🔒 Incorrect password for Laila.';
           return;
