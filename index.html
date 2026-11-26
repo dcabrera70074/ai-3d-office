@@ -205,6 +205,12 @@
     <div id="label-night_market" data-station="night_market" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-fuchsia-400/90">
       <span class="text-xs">🏮</span><span class="text-[11px] font-bold text-fuchsia-100">Dubai Night Market · 7 Stalls</span>
     </div>
+    <div id="label-skatepark" data-station="skatepark" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-amber-400/90">
+      <span class="text-xs">🛹</span><span class="text-[11px] font-bold text-amber-100">Dubai Skatepark · Skaters</span>
+    </div>
+    <div id="label-playground" data-station="playground" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-lime-400/90">
+      <span class="text-xs">🛝</span><span class="text-[11px] font-bold text-lime-100">Kids Playground · Kids NPC</span>
+    </div>
   </div>
 
   <!-- Projected Employee & Pet Nameplates -->
@@ -235,6 +241,8 @@
         <button onclick="setCameraPreset('downtown_plaza')" class="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 font-semibold shrink-0">🏙️ Downtown</button>
         <button onclick="setCameraPreset('burj_khalifa')" class="px-2 py-1 rounded-lg bg-yellow-500/25 hover:bg-yellow-500/35 border border-yellow-300/50 text-yellow-100 font-extrabold shrink-0">🗼 Burj Khalifa</button>
         <button onclick="setCameraPreset('night_market')" class="px-2 py-1 rounded-lg bg-fuchsia-500/25 hover:bg-fuchsia-500/35 border border-fuchsia-400/50 text-fuchsia-100 font-extrabold shrink-0">🏮 Night Market</button>
+        <button onclick="setCameraPreset('skatepark')" class="px-2 py-1 rounded-lg bg-amber-500/25 hover:bg-amber-500/35 border border-amber-400/50 text-amber-100 font-extrabold shrink-0">🛹 Skatepark</button>
+        <button onclick="setCameraPreset('playground')" class="px-2 py-1 rounded-lg bg-lime-500/25 hover:bg-lime-500/35 border border-lime-400/50 text-lime-100 font-extrabold shrink-0">🛝 Playground</button>
         <button onclick="setCameraPreset('jumeirah_beach')" class="px-2 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 font-semibold shrink-0">🏖️ Beach</button>
         <button onclick="setCameraPreset('atm')" class="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 font-semibold shrink-0">🏧 ATM</button>
         <button onclick="setCameraPreset('superiormed')" class="px-2 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 border border-teal-400/40 text-teal-200 font-semibold shrink-0">🏥 Clinic</button>
@@ -1555,11 +1563,36 @@
           new THREE.Vector3(26.0, 0, 23.2)
         ],
         labelAnchor: new THREE.Vector3(24.5, 4.5, 22.0)
+      },
+      skatepark: {
+        name: 'Dubai Urban Skatepark & Half-Pipe Bowl',
+        isExterior: true,
+        pos: new THREE.Vector3(-33.5, 0, 2.2),
+        corridorEntry: new THREE.Vector3(-33.5, 0, 8.4),
+        standSlots: [
+          new THREE.Vector3(-35.5, 0, 1.5),
+          new THREE.Vector3(-33.5, 0, 3.8),
+          new THREE.Vector3(-31.5, 0, 1.5)
+        ],
+        labelAnchor: new THREE.Vector3(-33.5, 4.4, 2.2)
+      },
+      playground: {
+        name: 'Dubai Kids Playground & Family Fun Park',
+        isExterior: true,
+        pos: new THREE.Vector3(-38.0, 0, 21.5),
+        corridorEntry: new THREE.Vector3(-38.0, 0, 15.2),
+        standSlots: [
+          new THREE.Vector3(-39.5, 0, 20.2),
+          new THREE.Vector3(-38.0, 0, 22.5),
+          new THREE.Vector3(-36.5, 0, 20.2)
+        ],
+        labelAnchor: new THREE.Vector3(-38.0, 4.4, 21.5)
       }
     };
 
     let scene, camera, renderer, controls, clock;
     let ambientLight, sunLight, hemiLight;
+    let sunMesh, moonMesh, nightStarsGroup, skyClouds = [], skateparkSkaters = [], playgroundKids = [], playgroundSwings = [], playgroundSeesaw = null;
     let clinicHoloRing, fountainRing, burjBeacon, jewelRings = [], steamParticles = [], yachts = [], parkCurve;
     const clickableObjects = [];
     const raycaster = new THREE.Raycaster();
@@ -1708,9 +1741,12 @@
 
       buildDubaiCityGroundAndSkyline();
       buildNeighboringDubaiCities();
+      buildSunMoonAndClouds();
       buildATMMachine();
       buildBurjKhalifaLandmark();
       buildNightMarketPlaza();
+      buildSkateparkAndSkaters();
+      buildKidsPlaygroundAndKids();
       buildAI3DOffice();
       buildSuperiorMedClinic();
       buildSuperiorMedAnnex();
@@ -1742,7 +1778,7 @@
           const stKey = lbl.getAttribute('data-station');
           if (stKey) {
             openStationPanel(stKey);
-            if (['superiormed', 'clinic_annex', 'supermarket', 'bookstore', 'jewellery', 'restaurant', 'park', 'houses', 'atm', 'burj_khalifa', 'night_market', 'marina', 'downtown_plaza', 'jumeirah_beach'].includes(stKey)) {
+            if (['superiormed', 'clinic_annex', 'supermarket', 'bookstore', 'jewellery', 'restaurant', 'park', 'houses', 'atm', 'burj_khalifa', 'night_market', 'skatepark', 'playground', 'marina', 'downtown_plaza', 'jumeirah_beach'].includes(stKey)) {
               setCameraPreset(stKey);
             }
           }
@@ -2139,172 +2175,510 @@
     }
 
     function buildNeighboringDubaiCities() {
+      // 1. DUBAI MARINA WATERFRONT & CRUISING YACHTS
       const marinaGroup = new THREE.Group();
+      marinaGroup.position.set(-46.0, 0, 12.0);
+
       const canal = new THREE.Mesh(
-        new THREE.BoxGeometry(16, 0.16, 44),
-        new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.18, metalness: 0.65, emissive: 0x0369a1, emissiveIntensity: 0.25 })
+        new THREE.BoxGeometry(10.5, 0.14, 34.0),
+        new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.18, metalness: 0.55, emissive: 0x0369a1, emissiveIntensity: 0.25 })
       );
-      canal.position.set(-51, -0.1, 15);
+      canal.position.set(-3.0, -0.1, 2.0);
       registerClickable(canal, 'station', 'marina');
       marinaGroup.add(canal);
 
       const boardwalk = new THREE.Mesh(
-        new THREE.BoxGeometry(5.5, 0.14, 44),
-        new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.65 })
+        new THREE.BoxGeometry(6.2, 0.22, 34.0),
+        new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5 })
       );
-      boardwalk.position.set(-40.5, -0.09, 15);
+      boardwalk.position.set(5.2, -0.06, 2.0);
       registerClickable(boardwalk, 'station', 'marina');
       marinaGroup.add(boardwalk);
 
       const marinaSign = new THREE.Mesh(
-        new THREE.BoxGeometry(10.5, 1.0, 0.24),
-        new THREE.MeshBasicMaterial({ map: createSignTexture('DUBAI MARINA CITY', 'Waterfront Towers · Yacht Harbor · Promenade', '#082f49', '#38bdf8') })
+        new THREE.BoxGeometry(9.2, 0.95, 0.24),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('DUBAI MARINA WATERFRONT', 'Yacht Harbor · Sunset Promenade', '#0c4a6e', '#38bdf8') })
       );
-      marinaSign.position.set(-43.5, 6.2, 12.0);
-      marinaSign.rotation.y = Math.PI / 2;
+      marinaSign.position.set(3.5, 4.4, -4.5);
       registerClickable(marinaSign, 'station', 'marina');
       marinaGroup.add(marinaSign);
 
-      [
-        { x: -62, z: -2, h: 24, c: 0x0f172a },
-        { x: -62, z: 12, h: 31, c: 0x0284c7 },
-        { x: -62, z: 26, h: 22, c: 0x115e59 }
-      ].forEach(mt => {
+      [-10, -2, 6, 14].forEach((mz, idx) => {
         const tower = new THREE.Mesh(
-          new THREE.BoxGeometry(6.5, mt.h, 6.5),
-          new THREE.MeshStandardMaterial({ color: mt.c, metalness: 0.7, roughness: 0.2 })
+          new THREE.BoxGeometry(4.2, 16 + idx * 3, 4.2),
+          new THREE.MeshStandardMaterial({ color: idx % 2 === 0 ? 0x0ea5e9 : 0x1d4ed8, metalness: 0.7, roughness: 0.2 })
         );
-        tower.position.set(mt.x, mt.h / 2 - 0.1, mt.z);
+        tower.position.set(-10.5, (16 + idx * 3) / 2 - 0.1, mz);
         registerClickable(tower, 'station', 'marina');
         marinaGroup.add(tower);
       });
 
-      [-48.5, -53.5].forEach((yx, yi) => {
-        const yacht = new THREE.Group();
-        const hull = new THREE.Mesh(
-          new THREE.BoxGeometry(1.6, 0.55, 4.4),
-          new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 })
-        );
-        hull.position.y = 0.25;
-        const deck = new THREE.Mesh(
-          new THREE.BoxGeometry(1.2, 0.48, 2.2),
-          new THREE.MeshStandardMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.7 })
-        );
-        deck.position.set(0, 0.72, -0.2);
-        yacht.add(hull, deck);
-        yacht.position.set(yx, 0.02, yi === 0 ? 4 : 24);
-        registerClickable(yacht, 'station', 'marina');
-        marinaGroup.add(yacht);
-        yachts.push({ group: yacht, dir: yi === 0 ? 1 : -1, speed: 2.2 + yi * 0.5 });
-      });
       scene.add(marinaGroup);
 
-      const downtownGroup = new THREE.Group();
-      const plaza = new THREE.Mesh(
-        new THREE.BoxGeometry(18, 0.16, 36),
-        new THREE.MeshStandardMaterial({ color: 0x292524, roughness: 0.45 })
-      );
-      plaza.position.set(52, -0.09, 14);
-      registerClickable(plaza, 'station', 'downtown_plaza');
-      downtownGroup.add(plaza);
+      // Animated Cruising Yachts in Dubai Marina Canal
+      [
+        { x: -48.0, z: -2.0, dir: 1, speed: 2.2, color: 0xffffff },
+        { x: -50.2, z: 24.0, dir: -1, speed: 1.8, color: 0xfef3c7 }
+      ].forEach(yc => {
+        const yacht = new THREE.Group();
+        yacht.position.set(yc.x, 0.1, yc.z);
+        const hull = new THREE.Mesh(
+          new THREE.BoxGeometry(1.4, 0.45, 3.6),
+          new THREE.MeshStandardMaterial({ color: yc.color, roughness: 0.25 })
+        );
+        hull.position.y = 0.22;
+        const deck = new THREE.Mesh(
+          new THREE.BoxGeometry(1.0, 0.42, 1.8),
+          new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.75 })
+        );
+        deck.position.set(0, 0.62, -0.2);
+        yacht.add(hull, deck);
+        scene.add(yacht);
+        yachts.push({ group: yacht, dir: yc.dir, speed: yc.speed });
+      });
 
-      const fountainPool = new THREE.Mesh(
-        new THREE.CylinderGeometry(3.6, 3.8, 0.35, 28),
-        new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.15, emissive: 0x0284c7, emissiveIntensity: 0.35 })
+      // 2. DOWNTOWN PALM BOULEVARD & GOLDEN FOUNTAIN PLAZA
+      const downtownGroup = new THREE.Group();
+      downtownGroup.position.set(50.0, 0, 12.0);
+
+      const plazaDeck = new THREE.Mesh(
+        new THREE.BoxGeometry(13.5, 0.2, 22.0),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 })
       );
-      fountainPool.position.set(51, 0.1, 18);
-      registerClickable(fountainPool, 'station', 'downtown_plaza');
-      downtownGroup.add(fountainPool);
+      plazaDeck.position.set(0, -0.08, 2.0);
+      registerClickable(plazaDeck, 'station', 'downtown_plaza');
+      downtownGroup.add(plazaDeck);
+
+      const fountainBasin = new THREE.Mesh(
+        new THREE.CylinderGeometry(3.2, 3.4, 0.28, 28),
+        new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0ea5e9, emissiveIntensity: 0.35 })
+      );
+      fountainBasin.position.set(0, 0.12, 3.5);
+      registerClickable(fountainBasin, 'station', 'downtown_plaza');
+      downtownGroup.add(fountainBasin);
 
       fountainRing = new THREE.Mesh(
-        new THREE.TorusGeometry(2.1, 0.12, 12, 32),
-        new THREE.MeshBasicMaterial({ color: 0xfde047 })
+        new THREE.TorusGeometry(1.65, 0.12, 12, 32),
+        new THREE.MeshBasicMaterial({ color: 0xfacc15 })
       );
       fountainRing.rotation.x = Math.PI / 2;
-      fountainRing.position.set(51, 1.35, 18);
+      fountainRing.position.set(0, 1.35, 3.5);
       downtownGroup.add(fountainRing);
 
-      const downtownSign = new THREE.Mesh(
-        new THREE.BoxGeometry(11.0, 1.0, 0.24),
-        new THREE.MeshBasicMaterial({ map: createSignTexture('DOWNTOWN DUBAI DISTRICT', 'Fountain Plaza · Luxury Retail · Financial Towers', '#1c1917', '#fbbf24') })
+      const dtSign = new THREE.Mesh(
+        new THREE.BoxGeometry(10.2, 0.95, 0.24),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('DOWNTOWN PALM & FOUNTAIN', 'Financial District · Luxury Plaza', '#451a03', '#fbbf24') })
       );
-      downtownSign.position.set(48, 6.6, 12.0);
-      downtownSign.rotation.y = -Math.PI / 2;
-      registerClickable(downtownSign, 'station', 'downtown_plaza');
-      downtownGroup.add(downtownSign);
+      dtSign.position.set(0, 4.6, -4.5);
+      registerClickable(dtSign, 'station', 'downtown_plaza');
+      downtownGroup.add(dtSign);
 
-      [
-        { x: 57, z: 3, h: 29, c: 0x312e81 },
-        { x: 57, z: 16, h: 36, c: 0x1e3a8a },
-        { x: 57, z: 27, h: 25, c: 0x0f766e }
-      ].forEach(dt => {
-        const tower = new THREE.Mesh(
-          new THREE.BoxGeometry(6.5, dt.h, 6.5),
-          new THREE.MeshStandardMaterial({ color: dt.c, metalness: 0.65, roughness: 0.25 })
+      [[-4.2, -5.5, 22], [4.2, -5.5, 26], [4.5, 7.5, 19]].forEach(([tx, tz, th]) => {
+        const dtTower = new THREE.Mesh(
+          new THREE.BoxGeometry(3.8, th, 3.8),
+          new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.18, emissive: 0xf59e0b, emissiveIntensity: 0.16 })
         );
-        tower.position.set(dt.x, dt.h / 2 - 0.1, dt.z);
-        registerClickable(tower, 'station', 'downtown_plaza');
-        downtownGroup.add(tower);
+        dtTower.position.set(tx, th / 2 - 0.1, tz);
+        registerClickable(dtTower, 'station', 'downtown_plaza');
+        downtownGroup.add(dtTower);
       });
+
       scene.add(downtownGroup);
 
+      // 3. JUMEIRAH BEACHFRONT & ARABIAN GULF SHORELINE
       const beachGroup = new THREE.Group();
-      const boardwalkSouth = new THREE.Mesh(
-        new THREE.BoxGeometry(110, 0.16, 4.2),
-        new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.65 })
-      );
-      boardwalkSouth.position.set(6, -0.09, 43.2);
-      registerClickable(boardwalkSouth, 'station', 'jumeirah_beach');
-      beachGroup.add(boardwalkSouth);
+      beachGroup.position.set(6.0, 0, 49.0);
 
       const sand = new THREE.Mesh(
-        new THREE.BoxGeometry(110, 0.14, 11.0),
+        new THREE.BoxGeometry(74.0, 0.18, 9.5),
         new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.9 })
       );
-      sand.position.set(6, -0.1, 50.5);
+      sand.position.set(0, -0.08, -1.0);
       registerClickable(sand, 'station', 'jumeirah_beach');
       beachGroup.add(sand);
 
       const sea = new THREE.Mesh(
-        new THREE.BoxGeometry(130, 0.14, 24.0),
-        new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.15, metalness: 0.55, emissive: 0x0891b2, emissiveIntensity: 0.25 })
+        new THREE.BoxGeometry(84.0, 0.14, 14.0),
+        new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.15, metalness: 0.45, emissive: 0x0891b2, emissiveIntensity: 0.28 })
       );
-      sea.position.set(6, -0.12, 67.5);
+      sea.position.set(0, -0.12, 9.5);
       registerClickable(sea, 'station', 'jumeirah_beach');
       beachGroup.add(sea);
 
       const beachSign = new THREE.Mesh(
-        new THREE.BoxGeometry(11.5, 0.95, 0.24),
-        new THREE.MeshBasicMaterial({ map: createSignTexture('JUMEIRAH BEACH CITY', 'Arabian Gulf Coast · Cabanas · Sunset Walk', '#083344', '#67e8f9') })
+        new THREE.BoxGeometry(10.4, 0.95, 0.24),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('JUMEIRAH BEACHFRONT · DUBAI', 'Sunset Boardwalk · Cabanas & Arabian Gulf', '#164e63', '#67e8f9') })
       );
-      beachSign.position.set(6.0, 3.8, 44.5);
+      beachSign.position.set(0, 4.1, -4.6);
       registerClickable(beachSign, 'station', 'jumeirah_beach');
       beachGroup.add(beachSign);
 
-      [-14, -2, 10, 22].forEach((bx, bi) => {
+      [-14, -5, 4, 13].forEach((bx, idx) => {
         const umbrella = new THREE.Mesh(
-          new THREE.ConeGeometry(1.75, 0.75, 12),
-          new THREE.MeshStandardMaterial({ color: bi % 2 === 0 ? 0xf43f5e : 0x0ea5e9 })
+          new THREE.ConeGeometry(1.45, 0.68, 12),
+          new THREE.MeshStandardMaterial({ color: idx % 2 === 0 ? 0xf43f5e : 0x0ea5e9 })
         );
-        umbrella.position.set(bx, 2.2, 50.0);
+        umbrella.position.set(bx, 1.9, 0.6);
+        registerClickable(umbrella, 'station', 'jumeirah_beach');
         beachGroup.add(umbrella);
 
         const pole = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.05, 0.05, 2.2, 8),
+          new THREE.CylinderGeometry(0.05, 0.05, 1.9, 8),
           new THREE.MeshStandardMaterial({ color: 0xf8fafc })
         );
-        pole.position.set(bx, 1.1, 50.0);
+        pole.position.set(bx, 0.95, 0.6);
         beachGroup.add(pole);
 
         const lounger = new THREE.Mesh(
-          new THREE.BoxGeometry(0.85, 0.25, 1.8),
+          new THREE.BoxGeometry(0.85, 0.24, 1.7),
           new THREE.MeshStandardMaterial({ color: 0xffffff })
         );
-        lounger.position.set(bx + 0.9, 0.15, 50.2);
+        lounger.position.set(bx + 1.1, 0.14, 0.8);
         beachGroup.add(lounger);
       });
 
       scene.add(beachGroup);
+    }
+
+    function buildSunMoonAndClouds() {
+      // Glowing Day Sun
+      const sunGroup = new THREE.Group();
+      const sunCore = new THREE.Mesh(
+        new THREE.SphereGeometry(3.4, 24, 24),
+        new THREE.MeshBasicMaterial({ color: 0xfef08a })
+      );
+      const sunHalo = new THREE.Mesh(
+        new THREE.SphereGeometry(4.8, 24, 24),
+        new THREE.MeshBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.32 })
+      );
+      sunGroup.add(sunCore, sunHalo);
+      sunGroup.position.set(34, 44, -46);
+      scene.add(sunGroup);
+      sunMesh = sunGroup;
+
+      // Crescent / Full Glowing Night Moon + Crater Detail
+      const moonGroup = new THREE.Group();
+      const moonCore = new THREE.Mesh(
+        new THREE.SphereGeometry(2.6, 24, 24),
+        new THREE.MeshBasicMaterial({ color: 0xf8fafc })
+      );
+      const moonHalo = new THREE.Mesh(
+        new THREE.SphereGeometry(3.8, 24, 24),
+        new THREE.MeshBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.28 })
+      );
+      moonGroup.add(moonCore, moonHalo);
+      moonGroup.position.set(-28, 42, -46);
+      moonGroup.visible = false;
+      scene.add(moonGroup);
+      moonMesh = moonGroup;
+
+      // Twinkling Night Stars
+      nightStarsGroup = new THREE.Group();
+      const starGeo = new THREE.SphereGeometry(0.18, 6, 6);
+      const starMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      for (let i = 0; i < 65; i++) {
+        const star = new THREE.Mesh(starGeo, starMat);
+        star.position.set(
+          (Math.random() - 0.5) * 180,
+          34 + Math.random() * 28,
+          -65 + Math.random() * 110
+        );
+        nightStarsGroup.add(star);
+      }
+      nightStarsGroup.visible = false;
+      scene.add(nightStarsGroup);
+
+      // Fluffy 3D Drifting Clouds across the Dubai Sky
+      const cloudMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.9,
+        metalness: 0.0,
+        transparent: true,
+        opacity: 0.92
+      });
+      const cloudSpecs = [
+        { x: -55, y: 27, z: -28, s: 1.25, speed: 0.9 },
+        { x: -22, y: 31, z: -14, s: 1.45, speed: 0.75 },
+        { x: 14, y: 29, z: -32, s: 1.35, speed: 1.05 },
+        { x: 46, y: 33, z: -18, s: 1.5, speed: 0.8 },
+        { x: -38, y: 28, z: 16, s: 1.15, speed: 0.95 },
+        { x: 8, y: 32, z: 26, s: 1.3, speed: 0.7 },
+        { x: 44, y: 29, z: 32, s: 1.2, speed: 0.85 },
+        { x: -12, y: 30, z: 46, s: 1.4, speed: 0.9 }
+      ];
+
+      cloudSpecs.forEach(cfg => {
+        const cloud = new THREE.Group();
+        const puffs = [
+          [0, 0, 0, 1.5],
+          [-1.35, -0.18, 0.2, 1.15],
+          [1.35, -0.15, -0.15, 1.2],
+          [-0.65, 0.55, -0.1, 1.1],
+          [0.7, 0.5, 0.15, 1.05],
+          [2.3, -0.35, 0.1, 0.85],
+          [-2.25, -0.35, -0.1, 0.85]
+        ];
+        puffs.forEach(([px, py, pz, r]) => {
+          const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 10), cloudMat);
+          puff.position.set(px, py, pz);
+          cloud.add(puff);
+        });
+        cloud.position.set(cfg.x, cfg.y, cfg.z);
+        cloud.scale.setScalar(cfg.s);
+        scene.add(cloud);
+        skyClouds.push({ group: cloud, speed: cfg.speed });
+      });
+    }
+
+    function buildSkateparkAndSkaters() {
+      const group = new THREE.Group();
+      group.position.set(-33.5, 0, 2.2);
+
+      // Concrete Skate Plaza Pad
+      const pad = new THREE.Mesh(
+        new THREE.BoxGeometry(11.5, 0.2, 9.6),
+        new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.55 })
+      );
+      pad.position.y = -0.08;
+      registerClickable(pad, 'station', 'skatepark');
+      group.add(pad);
+
+      // Neon Graffiti Sign
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(9.6, 0.9, 0.22),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('DUBAI URBAN SKATEPARK', 'Half-Pipe Ramps · Grind Rails · Skater Crew', '#1e1b4b', '#fbbf24') })
+      );
+      sign.position.set(0, 4.0, -4.4);
+      registerClickable(sign, 'station', 'skatepark');
+      group.add(sign);
+
+      // Left & Right Quarter-Pipe Ramps
+      const rampMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.45 });
+      const copingMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8, roughness: 0.2 });
+
+      [-4.2, 4.2].forEach((rx, idx) => {
+        const ramp = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.35, 5.2), rampMat);
+        ramp.position.set(rx, 0.42, 0);
+        ramp.rotation.z = idx === 0 ? -0.45 : 0.45;
+        registerClickable(ramp, 'station', 'skatepark');
+        group.add(ramp);
+
+        const coping = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 5.25, 10), copingMat);
+        coping.rotation.x = Math.PI / 2;
+        coping.position.set(idx === 0 ? rx - 0.85 : rx + 0.85, 1.05, 0);
+        group.add(coping);
+      });
+
+      // Center Funbox & Grind Rail
+      const funbox = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.55, 2.4), rampMat);
+      funbox.position.set(0, 0.27, -1.5);
+      registerClickable(funbox, 'station', 'skatepark');
+      group.add(funbox);
+
+      const grindRail = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, 3.6, 10),
+        new THREE.MeshStandardMaterial({ color: 0x38bdf8, metalness: 0.85 })
+      );
+      grindRail.rotation.z = Math.PI / 2;
+      grindRail.position.set(0, 0.72, -1.5);
+      group.add(grindRail);
+
+      scene.add(group);
+
+      // 3 Autonomous NPC Skateboarders riding skateboards & doing ollies/spins
+      const skaterConfigs = [
+        { name: 'Skater Kai', gender: 'male', color: '#f97316', skin: 0xd99b66, boardColor: 0xef4444, cx: -33.5, cz: 0.7, rx: 3.6, rz: 1.5, speed: 1.45, phase: 0 },
+        { name: 'Skater Zara', gender: 'female', color: '#ec4899', skin: 0xf1c27d, boardColor: 0x22d3ee, cx: -33.5, cz: 3.4, rx: 3.4, rz: 1.4, speed: -1.35, phase: 2.1 },
+        { name: 'Skater Leo', gender: 'male', color: '#eab308', skin: 0x8d5524, cx: -33.5, cz: 2.1, boardColor: 0xa855f7, rx: 2.4, rz: 2.4, speed: 1.75, phase: 4.2 }
+      ];
+
+      skaterConfigs.forEach((sc, idx) => {
+        const parts = createEmployeeAvatarMesh({
+          id: `skater_npc_${idx}`,
+          gender: sc.gender,
+          color: sc.color,
+          skinColor: sc.skin,
+          hairColor: 0x18181b
+        });
+        // Skater athletic stance
+        parts.bodyGroup.position.y = 0.14;
+        parts.leftHip.rotation.x = -0.25;
+        parts.rightHip.rotation.x = 0.25;
+        parts.leftShoulder.rotation.z = -0.55;
+        parts.rightShoulder.rotation.z = 0.55;
+
+        // 3D Skateboard with trucks & 4 wheels under feet
+        const boardGroup = new THREE.Group();
+        const deck = new THREE.Mesh(
+          new THREE.BoxGeometry(0.32, 0.05, 0.92),
+          new THREE.MeshStandardMaterial({ color: sc.boardColor, roughness: 0.3 })
+        );
+        deck.position.y = 0.08;
+        boardGroup.add(deck);
+
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc });
+        [[-0.14, 0.3], [0.14, 0.3], [-0.14, -0.3], [0.14, -0.3]].forEach(([wx, wz]) => {
+          const w = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.04, 10), wheelMat);
+          w.rotation.z = Math.PI / 2;
+          w.position.set(wx, 0.045, wz);
+          boardGroup.add(w);
+        });
+        parts.root.add(boardGroup);
+        parts.root.position.set(sc.cx, 0, sc.cz);
+        scene.add(parts.root);
+
+        skateparkSkaters.push({
+          parts,
+          boardGroup,
+          cx: sc.cx,
+          cz: sc.cz,
+          rx: sc.rx,
+          rz: sc.rz,
+          speed: sc.speed,
+          angle: sc.phase
+        });
+      });
+    }
+
+    function buildKidsPlaygroundAndKids() {
+      const group = new THREE.Group();
+      group.position.set(-38.0, 0, 21.5);
+
+      // Soft Colorful Playground Safety Turf
+      const turf = new THREE.Mesh(
+        new THREE.BoxGeometry(11.0, 0.18, 9.6),
+        new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.85 })
+      );
+      turf.position.y = -0.08;
+      registerClickable(turf, 'station', 'playground');
+      group.add(turf);
+
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(9.6, 0.9, 0.22),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('DUBAI KIDS PLAYGROUND', 'Swings · Rainbow Slide · Seesaw · Merry-Go-Round', '#14532d', '#bef264') })
+      );
+      sign.position.set(0, 4.0, -4.4);
+      registerClickable(sign, 'station', 'playground');
+      group.add(sign);
+
+      // Rainbow Slide Tower
+      const tower = new THREE.Mesh(
+        new THREE.BoxGeometry(1.6, 2.2, 1.6),
+        new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 })
+      );
+      tower.position.set(-3.0, 1.1, -1.8);
+      registerClickable(tower, 'station', 'playground');
+      group.add(tower);
+
+      const towerRoof = new THREE.Mesh(
+        new THREE.ConeGeometry(1.4, 1.1, 4),
+        new THREE.MeshStandardMaterial({ color: 0xef4444 })
+      );
+      towerRoof.position.set(-3.0, 2.75, -1.8);
+      towerRoof.rotation.y = Math.PI / 4;
+      group.add(towerRoof);
+
+      const slideChute = new THREE.Mesh(
+        new THREE.BoxGeometry(0.85, 0.14, 2.6),
+        new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.2 })
+      );
+      slideChute.position.set(-3.0, 1.05, -0.1);
+      slideChute.rotation.x = 0.62;
+      registerClickable(slideChute, 'station', 'playground');
+      group.add(slideChute);
+
+      // A-Frame Swing Set with 2 Swinging Seats
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, metalness: 0.5 });
+      const topBar = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 3.6, 10), frameMat);
+      topBar.rotation.z = Math.PI / 2;
+      topBar.position.set(2.2, 2.5, -1.8);
+      group.add(topBar);
+
+      [0.5, 3.9].forEach(lx => {
+        [-0.8, 0.8].forEach(lz => {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.65, 8), frameMat);
+          leg.position.set(lx, 1.25, -1.8 + lz * 0.5);
+          leg.rotation.x = lz > 0 ? -0.3 : 0.3;
+          group.add(leg);
+        });
+      });
+
+      [1.4, 3.0].forEach((sx, sIdx) => {
+        const swingPivot = new THREE.Group();
+        swingPivot.position.set(sx, 2.5, -1.8);
+        [-0.25, 0.25].forEach(rx => {
+          const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 1.75, 6), new THREE.MeshStandardMaterial({ color: 0xfef08a }));
+          rope.position.set(rx, -0.88, 0);
+          swingPivot.add(rope);
+        });
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.08, 0.35), new THREE.MeshStandardMaterial({ color: sIdx === 0 ? 0xf43f5e : 0xf59e0b }));
+        seat.position.set(0, -1.75, 0);
+        swingPivot.add(seat);
+        group.add(swingPivot);
+        playgroundSwings.push({ pivot: swingPivot, phase: sIdx * Math.PI });
+      });
+
+      // Seesaw in Foreground
+      const seesawBase = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.65, 4), new THREE.MeshStandardMaterial({ color: 0xa855f7 }));
+      seesawBase.position.set(0.2, 0.32, 2.2);
+      group.add(seesawBase);
+
+      playgroundSeesaw = new THREE.Group();
+      playgroundSeesaw.position.set(0.2, 0.65, 2.2);
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.1, 0.45), new THREE.MeshStandardMaterial({ color: 0xf97316 }));
+      playgroundSeesaw.add(plank);
+      group.add(playgroundSeesaw);
+
+      scene.add(group);
+
+      // 5 Playing Kids NPCs (scaled to child proportions!)
+      const kidConfigs = [
+        { gender: 'female', color: '#f43f5e', skin: 0xf1c27d, mode: 'swing', swingIdx: 0, phase: 0 },
+        { gender: 'male', color: '#38bdf8', skin: 0xd99b66, mode: 'swing', swingIdx: 1, phase: Math.PI },
+        { gender: 'female', color: '#facc15', skin: 0xfad7b8, mode: 'seesaw', side: -1.35, phase: 0 },
+        { gender: 'male', color: '#10b981', skin: 0xe0ac69, mode: 'seesaw', side: 1.35, phase: 0 },
+        { gender: 'female', color: '#a855f7', skin: 0xf1c27d, mode: 'run', cx: -38.8, cz: 21.8, rx: 1.8, rz: 1.5, phase: 1.2 }
+      ];
+
+      kidConfigs.forEach((kc, idx) => {
+        const kidParts = createEmployeeAvatarMesh({
+          id: `kid_npc_${idx}`,
+          gender: kc.gender,
+          color: kc.color,
+          skinColor: kc.skin,
+          hairColor: idx % 2 === 0 ? 0x1c1917 : 0x451a03
+        });
+        // Scale down to kid height (~64% of adult)
+        kidParts.root.scale.setScalar(0.64);
+
+        if (kc.mode === 'swing' && playgroundSwings[kc.swingIdx]) {
+          kidParts.bodyGroup.position.y = -0.32;
+          kidParts.leftHip.rotation.x = -1.35;
+          kidParts.rightHip.rotation.x = -1.35;
+          kidParts.root.position.set(0, -1.92, 0.04);
+          playgroundSwings[kc.swingIdx].pivot.add(kidParts.root);
+        } else if (kc.mode === 'seesaw' && playgroundSeesaw) {
+          kidParts.bodyGroup.position.y = -0.32;
+          kidParts.leftHip.rotation.x = -1.35;
+          kidParts.rightHip.rotation.x = -1.35;
+          kidParts.root.rotation.y = kc.side < 0 ? Math.PI / 2 : -Math.PI / 2;
+          kidParts.root.position.set(kc.side, -0.1, 0);
+          playgroundSeesaw.add(kidParts.root);
+        } else {
+          kidParts.root.position.set(kc.cx, 0, kc.cz);
+          scene.add(kidParts.root);
+        }
+
+        playgroundKids.push({
+          parts: kidParts,
+          mode: kc.mode,
+          cx: kc.cx || -38.0,
+          cz: kc.cz || 21.5,
+          rx: kc.rx || 1.6,
+          rz: kc.rz || 1.4,
+          angle: kc.phase
+        });
+      });
     }
 
     function buildAI3DOffice() {
@@ -3443,13 +3817,24 @@
       const weatherBtn = document.getElementById('weather-mode-btn');
 
       const skyMap = {
-        morning: { bg: 0x0284c7, sun: 1.35, amb: 0.5, label: '☀️ Morning' },
-        afternoon: { bg: 0x0ea5e9, sun: 1.55, amb: 0.58, label: '🌤️ Afternoon' },
-        sunset: { bg: 0x9a3412, sun: 1.15, amb: 0.42, label: '🌇 Sunset' },
-        night: { bg: 0x020617, sun: 0.35, amb: 0.28, label: '🌙 Night' }
+        morning: { bg: 0x0284c7, sun: 1.35, amb: 0.5, label: '☀️ Morning', isNight: false, sunPos: [34, 44, -46] },
+        afternoon: { bg: 0x0ea5e9, sun: 1.55, amb: 0.58, label: '🌤️ Afternoon', isNight: false, sunPos: [6, 52, -42] },
+        sunset: { bg: 0x9a3412, sun: 1.15, amb: 0.42, label: '🌇 Sunset', isNight: false, sunPos: [-36, 26, -46] },
+        night: { bg: 0x020617, sun: 0.35, amb: 0.28, label: '🌙 Night', isNight: true, sunPos: [34, -20, -46] }
       };
       const tCfg = skyMap[appState.timeMode] || skyMap.morning;
       if (timeBtn) timeBtn.textContent = tCfg.label;
+
+      if (sunMesh) {
+        sunMesh.visible = !tCfg.isNight;
+        sunMesh.position.set(...tCfg.sunPos);
+      }
+      if (moonMesh) {
+        moonMesh.visible = tCfg.isNight;
+      }
+      if (nightStarsGroup) {
+        nightStarsGroup.visible = tCfg.isNight;
+      }
 
       let skyHex = tCfg.bg;
       let fogDensity = 0.0055;
@@ -4416,6 +4801,8 @@
         clinic_annex: { pos: [31.2, 11.5, 16.5], target: [31.2, 1.4, 2.2] },
         supermarket: { pos: [-25.5, 10.5, 8.5], target: [-25.5, 1.2, 21.5] },
         bookstore: { pos: [-19.5, 10.5, 14.5], target: [-19.5, 1.2, 2.2] },
+        skatepark: { pos: [-33.5, 10.5, 14.5], target: [-33.5, 1.2, 2.2] },
+        playground: { pos: [-38.0, 10.5, 9.5], target: [-38.0, 1.2, 21.5] },
         jewellery: { pos: [-12.5, 10.5, 9.5], target: [-12.5, 1.2, 21.5] },
         restaurant: { pos: [14.5, 10.5, 9.5], target: [14.5, 1.2, 21.5] },
         night_market: { pos: [24.5, 11.5, 10.0], target: [24.5, 1.2, 22.0] },
@@ -4432,6 +4819,30 @@
       const title = document.getElementById('station-title');
       const sub = document.getElementById('station-sub');
       const body = document.getElementById('station-body');
+
+      if (stationKey === 'skatepark') {
+        title.textContent = 'Dubai Urban Skatepark';
+        sub.textContent = 'Half-Pipe Ramps · Grind Rails · Skater NPCs';
+        body.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-100 leading-relaxed">
+            <strong>Live Skater Crew:</strong> Watch <strong>Skater Kai, Zara &amp; Leo</strong> carving the quarter-pipes and landing kickflips on their skateboards!
+          </div>
+          <button onclick="navigateEmployeeTo(appState.selectedEmployeeId, 'skatepark', 'Hanging out & watching skaters at Dubai Skatepark 🛹', { updateHome: false })" class="w-full py-2 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-[11px]">🛹 Send Selected Person to Skatepark</button>
+        `;
+        return;
+      }
+
+      if (stationKey === 'playground') {
+        title.textContent = 'Dubai Kids Playground';
+        sub.textContent = 'Swings · Rainbow Slide · Seesaw · Kids Playing';
+        body.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-lime-500/15 border border-lime-400/40 text-lime-100 leading-relaxed">
+            <strong>Family Playground:</strong> Kids are swinging on the A-frame swings, riding the seesaw, and playing around the rainbow slide!
+          </div>
+          <button onclick="navigateEmployeeTo(appState.selectedEmployeeId, 'playground', 'Relaxing & watching kids play at Playground 🛝', { updateHome: false })" class="w-full py-2 rounded-xl bg-lime-400 text-slate-950 font-extrabold text-[11px]">🛝 Visit Kids Playground</button>
+        `;
+        return;
+      }
 
       if (stationKey === 'night_market') {
         title.textContent = 'Dubai Night Market · 7 Vendor Stalls';
@@ -5044,6 +5455,48 @@
         fountainRing.rotation.z -= dt * 1.6;
         fountainRing.position.y = 1.35 + Math.sin(elapsed * 3) * 0.18;
       }
+      if (sunMesh && sunMesh.visible) {
+        sunMesh.rotation.y += dt * 0.25;
+        sunMesh.children[1].scale.setScalar(1 + Math.sin(elapsed * 2.2) * 0.06);
+      }
+      if (moonMesh && moonMesh.visible) {
+        moonMesh.rotation.y += dt * 0.15;
+      }
+      skyClouds.forEach(c => {
+        c.group.position.x += c.speed * dt;
+        if (c.group.position.x > 78) c.group.position.x = -78;
+      });
+      skateparkSkaters.forEach(sk => {
+        sk.angle += sk.speed * dt;
+        const nx = sk.cx + Math.cos(sk.angle) * sk.rx;
+        const nz = sk.cz + Math.sin(sk.angle) * sk.rz;
+        const tx = -Math.sin(sk.angle) * sk.rx * Math.sign(sk.speed);
+        const tz = Math.cos(sk.angle) * sk.rz * Math.sign(sk.speed);
+        sk.parts.root.position.set(nx, 0, nz);
+        sk.parts.root.rotation.y = Math.atan2(tx, tz);
+        // Periodic skateboard ollie jump & board flip!
+        const jumpWave = Math.sin(elapsed * 3.2 + sk.angle);
+        const ollieY = jumpWave > 0.65 ? (jumpWave - 0.65) * 1.6 : 0;
+        sk.parts.root.position.y = ollieY;
+        sk.boardGroup.rotation.z = ollieY > 0.05 ? (ollieY * Math.PI * 2) : 0;
+      });
+      playgroundSwings.forEach(sw => {
+        sw.pivot.rotation.x = Math.sin(elapsed * 2.8 + sw.phase) * 0.55;
+      });
+      if (playgroundSeesaw) {
+        playgroundSeesaw.rotation.z = Math.sin(elapsed * 2.2) * 0.24;
+      }
+      playgroundKids.forEach(kid => {
+        if (kid.mode === 'run') {
+          kid.angle += dt * 1.8;
+          const kx = kid.cx + Math.cos(kid.angle) * kid.rx;
+          const kz = kid.cz + Math.sin(kid.angle) * kid.rz;
+          kid.parts.root.position.set(kx, Math.abs(Math.sin(elapsed * 9)) * 0.08, kz);
+          kid.parts.root.rotation.y = Math.atan2(-Math.sin(kid.angle), Math.cos(kid.angle));
+          kid.parts.leftHip.rotation.x = Math.sin(elapsed * 12) * 0.65;
+          kid.parts.rightHip.rotation.x = -Math.sin(elapsed * 12) * 0.65;
+        }
+      });
       jewelRings.forEach((r, i) => { r.rotation.y += dt * (1.8 + i * 0.4); });
       yachts.forEach(y => {
         y.group.position.z += y.dir * y.speed * dt;
