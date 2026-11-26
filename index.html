@@ -789,8 +789,8 @@
     const MAX_OFFLINE_SECONDS = 8 * 3600; // Capped at 8 hours max offline progress (data never expires)
     const ADMIN_USERNAME = 'Dcabrera';
     const ADMIN_PASSWORD = 'qwerty';
-    const LAILA_USERNAME = 'laila';
-    const LAILA_PASSWORD = 'lailalovederick';
+    const LAILA_USERNAME = 'Laila';
+    const LAILA_PASSWORD = 'Lailalovederick';
 
     const INITIAL_ROSTER_DATA = [
       { id: 'derick', name: 'Derick', role: 'Head of Digital Marketing', gender: 'male', station: 'derick', color: '#f59e0b', skinColor: 0xe0ac69, hairColor: 0x1e1b18, cash: 2500, bank: 42000, salary: 22000, energy: 96, comfort: 94, hunger: 92, exhaustion: 6, fitnessLevel: 2, fitnessXp: 40, foodStock: 92, statusText: 'Leading Marketing HQ (Partner: Laila)', logs: ['Managing Marketing HQ, SuperiorMed & Aurelia Jewellery.'] },
@@ -4075,30 +4075,12 @@
         return;
       }
 
-      if (username.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
-        if (password !== ADMIN_PASSWORD) {
-          if (fb) fb.textContent = '🔒 Invalid password for this account.';
+      if (acc.id === 'laila') {
+        if (password.toLowerCase() !== LAILA_PASSWORD.toLowerCase()) {
+          if (fb) fb.textContent = '🔒 Incorrect password for Laila.';
           return;
         }
-        appState.currentAccountId = 'derick';
-        updateActiveAccountBadge();
-        selectEmployee('derick');
-        focusSelectedEmployee();
-        closeAccountModal();
-        saveGameNow('Account Logged In');
-        appendChatMessage('agent', `🔓 Logged in successfully! Access level: <strong>General</strong>.`);
-        return;
-      }
-
-      const acc = appState.registeredAccounts.find(a =>
-        !a.isAdmin && ((a.username && a.username.toLowerCase() === username.toLowerCase()) || a.name.toLowerCase() === username.toLowerCase())
-      );
-      if (!acc) {
-        if (fb) fb.textContent = '❌ Account not found. Switch to "Register New Gamer" to create your account!';
-        return;
-      }
-
-      if ((acc.pin || '') !== password) {
+      } else if ((acc.pin || '').toLowerCase() !== password.toLowerCase()) {
         if (fb) fb.textContent = '🔒 Incorrect password for this user account.';
         return;
       }
