@@ -1,0 +1,3880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 3D Office &amp; Dubai City World</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      background: #020617;
+      color: #f8fafc;
+    }
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+    canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    .glass {
+      background: rgba(15, 23, 42, 0.84);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+    }
+    .station-label, .emp-label {
+      position: fixed;
+      transform: translate(-50%, -100%);
+      z-index: 15;
+      transition: opacity 0.15s ease, transform 0.1s ease;
+      white-space: nowrap;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .station-label:hover, .emp-label:hover {
+      transform: translate(-50%, -105%) scale(1.04);
+    }
+    .custom-scroll::-webkit-scrollbar { width: 5px; height: 5px; }
+    .custom-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.4); }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.6); border-radius: 9999px; }
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+    .pulse-dot { animation: pulseGlow 1.8s infinite; }
+    .panel-minimized {
+      height: auto !important;
+      bottom: auto !important;
+      overflow: hidden !important;
+    }
+    .panel-minimized .panel-body {
+      display: none !important;
+    }
+    .floating-window {
+      touch-action: none;
+      max-width: calc(100vw - 1rem);
+      max-height: calc(100vh - 1rem);
+      transition: box-shadow 0.15s ease;
+    }
+    .floating-window.is-dragging {
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.75);
+      border-color: rgba(56, 189, 248, 0.85);
+      z-index: 45 !important;
+    }
+    .drag-handle {
+      cursor: grab;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+    .resize-grip {
+      position: absolute;
+      right: 2px;
+      bottom: 2px;
+      width: 16px;
+      height: 16px;
+      cursor: nwse-resize;
+      z-index: 30;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 2px;
+      color: rgba(148, 163, 184, 0.75);
+      touch-action: none;
+    }
+    .panel-minimized .resize-grip {
+      display: none;
+    }
+    @media (max-width: 768px) {
+      #employee-inspector {
+        top: auto !important;
+        left: 0.5rem;
+        right: auto;
+        bottom: 0.5rem;
+        width: calc(100vw - 1rem);
+        max-height: 44vh;
+      }
+      #right-chat-drawer {
+        top: auto !important;
+        left: 0.5rem;
+        right: auto;
+        bottom: 0.5rem;
+        width: calc(100vw - 1rem);
+        max-height: 46vh;
+      }
+      .station-label, .emp-label {
+        transform: translate(-50%, -100%) scale(0.86);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D Viewport -->
+  <div id="canvas-container"></div>
+
+  <!-- Projected 3D Building & Workstation Labels -->
+  <div id="station-labels-layer">
+    <div id="label-derick" data-station="derick" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-amber-400/70">
+      <span class="w-2 h-2 rounded-full bg-amber-400 pulse-dot"></span><span class="text-[11px] font-bold text-amber-100">Marketing HQ · Derick</span>
+    </div>
+    <div id="label-priority_board" data-station="priority_board" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-indigo-400/70">
+      <span class="text-xs">📋</span><span class="text-[11px] font-bold text-indigo-100">Priority Board</span>
+    </div>
+    <div id="label-coffee" data-station="coffee" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-amber-500/70">
+      <span class="text-xs">☕</span><span id="label-coffee-text" class="text-[11px] font-bold text-amber-100">Office Kitchen · 90%</span>
+    </div>
+    <div id="label-washroom" data-station="washroom" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-sky-400/70">
+      <span class="text-xs">🚻</span><span class="text-[11px] font-bold text-sky-100">Washroom</span>
+    </div>
+    <div id="label-gmail" data-station="gmail" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-rose-400/70">
+      <span class="w-2 h-2 rounded-full bg-rose-400"></span><span class="text-[11px] font-bold text-rose-100">Gmail · Elena</span>
+    </div>
+    <div id="label-drive" data-station="drive" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-emerald-400/70">
+      <span class="w-2 h-2 rounded-full bg-emerald-400"></span><span class="text-[11px] font-bold text-emerald-100">Drive · Marcus</span>
+    </div>
+    <div id="label-blender" data-station="blender" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-orange-400/70">
+      <span class="text-xs">🎨</span><span class="text-[11px] font-bold text-orange-100">Blender 5.3 · Maya</span>
+    </div>
+    <div id="label-facebook" data-station="facebook" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-blue-400/70">
+      <span class="w-2 h-2 rounded-full bg-blue-400"></span><span class="text-[11px] font-bold text-blue-100">Facebook · Abrar</span>
+    </div>
+    <div id="label-tiktok" data-station="tiktok" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-pink-400/70">
+      <span class="w-2 h-2 rounded-full bg-pink-400"></span><span class="text-[11px] font-bold text-pink-100">TikTok · Abrar</span>
+    </div>
+    <div id="label-superiormed" data-station="superiormed" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-teal-400/80">
+      <span class="text-xs">🏥</span><span class="text-[11px] font-bold text-teal-100">SuperiorMed Clinic · Laila &amp; Kath</span>
+    </div>
+    <div id="label-clinic_coffee" data-station="clinic_coffee" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-teal-300/70">
+      <span class="text-xs">☕</span><span id="label-clinic_coffee-text" class="text-[11px] font-bold text-teal-100">Clinic Kitchen · 92%</span>
+    </div>
+    <div id="label-clinic_annex" data-station="clinic_annex" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-cyan-300/80">
+      <span class="text-xs">🩺</span><span class="text-[11px] font-bold text-cyan-100">SuperiorMed Annex · Dr. Faris, Nurse Hannah &amp; Amira</span>
+    </div>
+    <div id="label-bookstore" data-station="bookstore" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-violet-400/70">
+      <span class="text-xs">📚</span><span class="text-[11px] font-bold text-violet-100">Al-Noor Bookstore · Zayd</span>
+    </div>
+    <div id="label-supermarket" data-station="supermarket" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-lime-400/70">
+      <span class="text-xs">🛒</span><span class="text-[11px] font-bold text-lime-100">FreshMart Grocery · Tariq</span>
+    </div>
+    <div id="label-jewellery" data-station="jewellery" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-yellow-400/80">
+      <span class="text-xs">💎</span><span class="text-[11px] font-bold text-yellow-100">Aurelia Jewellery</span>
+    </div>
+    <div id="label-restaurant" data-station="restaurant" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-orange-400/80">
+      <span class="text-xs">🍽️</span><span class="text-[11px] font-bold text-orange-100">Le Petit Bistro · Chef Mateo</span>
+    </div>
+    <div id="label-park" data-station="park" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-emerald-400/80">
+      <span class="text-xs">🏃</span><span class="text-[11px] font-bold text-emerald-100">City Park &amp; Jogging Track</span>
+    </div>
+    <div id="label-houses" data-station="houses" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-indigo-400/80">
+      <span class="text-xs">🏘️</span><span class="text-[11px] font-bold text-indigo-100">See-Through Employee Houses</span>
+    </div>
+    <div id="label-marina" data-station="marina" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-sky-400/80">
+      <span class="text-xs">🛥️</span><span class="text-[11px] font-bold text-sky-100">Dubai Marina Waterfront</span>
+    </div>
+    <div id="label-downtown_plaza" data-station="downtown_plaza" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-amber-400/80">
+      <span class="text-xs">🏙️</span><span class="text-[11px] font-bold text-amber-100">Downtown Palm &amp; Fountain</span>
+    </div>
+    <div id="label-jumeirah_beach" data-station="jumeirah_beach" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-cyan-400/80">
+      <span class="text-xs">🏖️</span><span class="text-[11px] font-bold text-cyan-100">Jumeirah Beachfront</span>
+    </div>
+    <div id="label-atm" data-station="atm" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-emerald-400/85">
+      <span class="text-xs">🏧</span><span class="text-[11px] font-bold text-emerald-100">Dubai Bank ATM</span>
+    </div>
+    <div id="label-burj_khalifa" data-station="burj_khalifa" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-amber-300/90">
+      <span class="text-xs">🗼</span><span class="text-[11px] font-bold text-amber-100">Burj Khalifa · Sky View &amp; Dating</span>
+    </div>
+  </div>
+
+  <!-- Projected Employee & Pet Nameplates -->
+  <div id="employee-labels-layer"></div>
+
+  <!-- Top Navigation, Camera Presets & Environment Bar (Movable & Minimizable) -->
+  <header id="top-header-bar" class="floating-window fixed top-2 left-2 right-2 z-30 flex flex-col gap-1.5 pointer-events-none">
+    <div id="top-drag-bar" class="drag-handle glass rounded-2xl px-2.5 py-1.5 flex flex-wrap items-center justify-between gap-1.5 pointer-events-auto shadow-2xl">
+      <div class="flex items-center gap-2">
+        <div class="w-7 h-7 rounded-xl bg-gradient-to-br from-amber-400 via-teal-400 to-indigo-500 flex items-center justify-center font-extrabold text-slate-950 text-xs shadow">
+          AI
+        </div>
+        <div>
+          <div class="text-xs font-extrabold tracking-tight text-white flex items-center gap-1.5">
+            <span>AI 3D Office &amp; Dubai Cities</span>
+            <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-cyan-300 border border-cyan-500/30 hidden sm:inline">✥ Drag Tabs</span>
+          </div>
+          <div id="top-subtitle" class="text-[10px] text-slate-400 hidden md:block">SuperiorMed Clinic &amp; Annex · Dubai Marina · Downtown · Jumeirah Beach · Blender 5.3</div>
+        </div>
+      </div>
+
+      <!-- Camera Presets (Office, Buildings & Multiple Dubai City Districts) -->
+      <div id="top-camera-row" class="flex items-center gap-1 text-[10px] overflow-x-auto max-w-full custom-scroll pb-0.5">
+        <button onclick="setCameraPreset('overview')" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-100 font-semibold shrink-0">🏢 Office</button>
+        <button onclick="setCameraPreset('city')" class="px-2 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 font-semibold shrink-0">🌆 All Cities</button>
+        <button onclick="setCameraPreset('marina')" class="px-2 py-1 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/40 text-blue-200 font-semibold shrink-0">🛥️ Marina</button>
+        <button onclick="setCameraPreset('downtown_plaza')" class="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 font-semibold shrink-0">🏙️ Downtown</button>
+        <button onclick="setCameraPreset('burj_khalifa')" class="px-2 py-1 rounded-lg bg-yellow-500/25 hover:bg-yellow-500/35 border border-yellow-300/50 text-yellow-100 font-extrabold shrink-0">🗼 Burj Khalifa</button>
+        <button onclick="setCameraPreset('jumeirah_beach')" class="px-2 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 font-semibold shrink-0">🏖️ Beach</button>
+        <button onclick="setCameraPreset('atm')" class="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 font-semibold shrink-0">🏧 ATM</button>
+        <button onclick="setCameraPreset('superiormed')" class="px-2 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 border border-teal-400/40 text-teal-200 font-semibold shrink-0">🏥 Clinic</button>
+        <button onclick="setCameraPreset('clinic_annex')" class="px-2 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 font-semibold shrink-0">🩺 Annex</button>
+        <button onclick="setCameraPreset('supermarket')" class="px-2 py-1 rounded-lg bg-lime-500/20 hover:bg-lime-500/30 border border-lime-400/40 text-lime-200 font-semibold shrink-0">🛒 Market</button>
+        <button onclick="setCameraPreset('bookstore')" class="px-2 py-1 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/40 text-violet-200 font-semibold shrink-0">📚 Books</button>
+        <button onclick="setCameraPreset('jewellery')" class="px-2 py-1 rounded-lg bg-yellow-500/20 hover:bg-yellow-500/30 border border-yellow-400/40 text-yellow-200 font-semibold shrink-0">💎 Jewellery</button>
+        <button onclick="setCameraPreset('restaurant')" class="px-2 py-1 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 border border-orange-400/40 text-orange-200 font-semibold shrink-0">🍽️ Bistro</button>
+        <button onclick="setCameraPreset('park')" class="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 font-semibold shrink-0">🏃 Park</button>
+        <button onclick="setCameraPreset('houses')" class="px-2 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 font-semibold shrink-0">🏘️ Houses</button>
+        <button onclick="focusPipoy()" class="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 font-semibold shrink-0">🐶 Pipoy</button>
+      </div>
+
+      <!-- Time of Day, Weather, Studio, Mobile Fullscreen & Layout Controls -->
+      <div class="flex flex-wrap items-center gap-1 text-[10px]">
+        <span id="sim-clock-badge" class="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 font-mono text-amber-300 font-bold">09:15 AM</span>
+        <button onclick="processMonthlyPayday()" title="Run Team Salary Payroll" class="px-2 py-1 rounded-lg bg-emerald-500/25 hover:bg-emerald-500/40 border border-emerald-400/50 text-emerald-200 font-extrabold">💰 Payday</button>
+        <button onclick="openMobilePhoneModal()" title="Open Smartphone (Texting, Fakebook & Intagram)" class="px-2 py-1 rounded-lg bg-blue-500/25 hover:bg-blue-500/40 border border-blue-400/50 text-blue-100 font-extrabold">📱 Phone</button>
+        <button id="time-mode-btn" onclick="cycleTimeOfDay()" class="px-2 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 font-semibold">☀️ Morning</button>
+        <button id="weather-mode-btn" onclick="cycleWeather()" class="px-2 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 font-semibold">🌤️ Clear</button>
+        <button onclick="openBlenderStudio()" class="px-2 py-1 rounded-lg bg-orange-500 hover:bg-orange-400 text-slate-950 font-extrabold shadow">🎨 Blender</button>
+        <button onclick="openHireModal()" class="px-2 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold shadow">+ Hire</button>
+        <button id="fullscreen-btn" onclick="toggleBrowserFullscreen()" title="Toggle Full Screen on Mobile & Desktop" class="px-2 py-1 rounded-lg bg-purple-500/25 hover:bg-purple-500/40 border border-purple-400/50 text-purple-100 font-extrabold">⛶ Full Screen</button>
+        <button onclick="resetAllPanelPositions()" title="Reset Movable Tabs Layout" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold">↺ Reset Tabs</button>
+        <button id="toggle-all-ui-btn" onclick="toggleAllPanels()" title="Minimize/Restore All Panels" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-cyan-400/50 text-cyan-200 font-extrabold">👁️ Clean</button>
+        <button id="min-top-btn" onclick="toggleTopBarMinimize()" title="Minimize Top Bar" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold">—</button>
+      </div>
+    </div>
+
+    <!-- Team Roster Bar -->
+    <div id="team-roster-bar" class="glass rounded-xl px-2.5 py-1 flex items-center gap-1.5 overflow-x-auto custom-scroll pointer-events-auto shadow-lg"></div>
+  </header>
+
+  <!-- Left Drawer: Employee & City Life Inspector (Movable, Resizable & Minimizable) -->
+  <aside id="employee-inspector" class="floating-window fixed left-2.5 top-24 w-72 sm:w-80 h-[calc(100vh-7rem)] z-20 glass rounded-2xl p-2.5 flex flex-col gap-2 overflow-y-auto custom-scroll shadow-2xl">
+    <div id="emp-drag-handle" class="drag-handle flex items-center justify-between gap-1.5 border-b border-slate-700/70 pb-1.5">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="text-slate-400 text-xs select-none" title="Drag to move window">✥</span>
+        <div id="emp-avatar-badge" class="w-7 h-7 rounded-xl flex items-center justify-center font-extrabold text-slate-950 text-xs shrink-0">D</div>
+        <div class="min-w-0">
+          <div id="emp-name" class="text-xs font-extrabold text-white truncate">Derick</div>
+          <div id="emp-role" class="text-[10px] text-slate-300 truncate">Head of Digital Marketing</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-1 shrink-0">
+        <button onclick="focusSelectedEmployee()" class="px-1.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[10px] text-slate-200">🎯</button>
+        <button id="min-left-btn" onclick="togglePanelMinimize('employee-inspector', 'min-left-btn')" title="Minimize Employee Panel" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[10px] text-slate-200 font-bold">—</button>
+      </div>
+    </div>
+
+    <div class="panel-body flex flex-col gap-2">
+    <div id="emp-partner-banner" class="hidden p-2 rounded-xl bg-teal-500/15 border border-teal-400/35 text-[10px] text-teal-100"></div>
+
+    <!-- Money, Bank & Salary Card -->
+    <div class="p-2 rounded-xl bg-gradient-to-r from-emerald-950/90 to-slate-900/90 border border-emerald-500/40 flex items-center justify-between gap-1.5">
+      <div>
+        <div class="text-[9px] uppercase tracking-wider text-emerald-300 font-bold">💵 Cash Wallet / 🏦 Bank</div>
+        <div class="text-xs font-extrabold text-white"><span id="emp-cash">AED 1,250</span> <span class="text-[10px] text-slate-400 font-normal">· Bank: <span id="emp-bank" class="text-emerald-300 font-semibold">AED 18,500</span></span></div>
+        <div class="text-[9px] text-slate-400">Salary: <span id="emp-salary" class="text-amber-300 font-semibold">AED 14,000/mo</span></div>
+      </div>
+      <div class="flex flex-col gap-1">
+        <button id="emp-atm-btn" class="px-2 py-1 rounded-lg bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-extrabold text-[10px]">🏧 ATM</button>
+        <button onclick="openMobilePhoneModal()" class="px-2 py-1 rounded-lg bg-blue-500 hover:bg-blue-400 text-white font-extrabold text-[10px]">📱 Apps</button>
+      </div>
+    </div>
+
+    <!-- Vitals & Home Food Stock -->
+    <div class="grid grid-cols-4 gap-1 text-center">
+      <div class="p-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80">
+        <div class="text-[9px] text-slate-400">☕ Energy</div>
+        <div id="emp-energy" class="text-xs font-extrabold text-emerald-300">95%</div>
+      </div>
+      <div class="p-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80">
+        <div class="text-[9px] text-slate-400">🚻 Comfort</div>
+        <div id="emp-comfort" class="text-xs font-extrabold text-sky-300">92%</div>
+      </div>
+      <div class="p-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80">
+        <div class="text-[9px] text-slate-400">😮‍💨 Exhaust</div>
+        <div id="emp-exhaust" class="text-xs font-extrabold text-amber-300">8%</div>
+      </div>
+      <div class="p-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80">
+        <div class="text-[9px] text-slate-400">🛒 Food</div>
+        <div id="emp-food" class="text-xs font-extrabold text-lime-300">88%</div>
+      </div>
+    </div>
+
+    <div class="px-2.5 py-1.5 rounded-xl bg-slate-900/80 border border-slate-700/70 text-[11px] text-cyan-200 font-medium">
+      Status: <span id="emp-status" class="text-white font-semibold">Leading Digital Marketing HQ</span>
+    </div>
+
+    <!-- Real-Life Actions -->
+    <div>
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Paid Activities, Burj Khalifa Date &amp; Mobile</div>
+      <div class="grid grid-cols-4 gap-1 text-[10px]">
+        <button id="emp-coffee-btn" class="py-1.5 px-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 font-semibold">☕ 25 AED</button>
+        <button id="emp-clinic-coffee-btn" class="py-1.5 px-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 border border-teal-400/40 text-teal-200 font-semibold">🏥☕ 30</button>
+        <button id="emp-toilet-btn" class="py-1.5 px-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 font-semibold">🚻 Free</button>
+        <button id="emp-bistro-btn" class="py-1.5 px-1 rounded-lg bg-orange-500/20 hover:bg-orange-500/30 border border-orange-400/40 text-orange-200 font-semibold">🍽️ 120</button>
+        <button id="emp-grocery-btn" class="py-1.5 px-1 rounded-lg bg-lime-500/20 hover:bg-lime-500/30 border border-lime-400/40 text-lime-200 font-semibold">🛒 280</button>
+        <button id="emp-books-btn" class="py-1.5 px-1 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/40 text-violet-200 font-semibold">📚 95</button>
+        <button id="emp-burj-btn" class="py-1.5 px-1 rounded-lg bg-yellow-500/25 hover:bg-yellow-500/35 border border-yellow-300/50 text-yellow-100 font-bold">🗼 Date</button>
+        <button id="emp-jog-btn" class="py-1.5 px-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 font-semibold">🏃 Jog</button>
+        <button id="emp-mobile-btn" class="py-1.5 px-1 rounded-lg bg-blue-500/25 hover:bg-blue-500/35 border border-blue-400/50 text-blue-100 font-bold">📱 Phone</button>
+        <button id="emp-home-btn" class="py-1.5 px-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 font-semibold">🏠 Home</button>
+        <button id="emp-work-btn" class="col-span-2 py-1.5 px-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-semibold">💼 Back to Desk</button>
+      </div>
+    </div>
+
+    <!-- Role Tasks -->
+    <div>
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Department Actions</div>
+      <div id="emp-role-tasks" class="flex flex-col gap-1.5"></div>
+    </div>
+
+    <!-- Activity Log -->
+    <div class="flex-1 min-h-[70px]">
+      <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Recent Activity</div>
+      <div id="emp-logs" class="flex flex-col gap-1 text-[10px] text-slate-300"></div>
+    </div>
+    </div>
+    <div id="emp-resize-grip" class="resize-grip" title="Drag corner to resize">◢</div>
+  </aside>
+
+  <!-- Right Drawer: Station Inspector & AI Orchestrator Chat (Movable, Resizable & Minimizable) -->
+  <aside id="right-chat-drawer" class="floating-window fixed right-2.5 top-24 w-72 sm:w-80 h-[calc(100vh-7rem)] z-20 glass rounded-2xl p-2.5 flex flex-col gap-2 shadow-2xl">
+    <!-- Drawer Header with Drag Handle & Minimize -->
+    <div id="chat-drag-handle" class="drag-handle flex items-center justify-between gap-2 border-b border-slate-700/70 pb-1.5">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="text-slate-400 text-xs select-none" title="Drag to move window">✥</span>
+        <span id="station-badge" class="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
+        <div class="min-w-0">
+          <div id="station-title" class="text-xs font-extrabold text-white truncate">AI Orchestrator &amp; Station</div>
+          <div id="station-sub" class="text-[10px] text-slate-400 truncate">Drag ✥ header to move · ◢ to resize</div>
+        </div>
+      </div>
+      <button id="min-right-btn" onclick="togglePanelMinimize('right-chat-drawer', 'min-right-btn')" title="Minimize Chat & Station Panel" class="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[10px] text-slate-200 font-bold shrink-0">—</button>
+    </div>
+
+    <div class="panel-body flex-1 flex flex-col gap-2 min-h-0">
+    <!-- Active Station / Building Card -->
+    <div class="p-2 rounded-xl bg-slate-900/90 border border-slate-700/80 flex flex-col gap-1.5">
+      <div id="station-body" class="flex flex-col gap-1.5 text-[11px] text-slate-200">
+        <div class="grid grid-cols-2 gap-1.5">
+          <button onclick="triggerGroupCommute('to_work')" class="py-1.5 px-2 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 font-semibold text-[10px]">🚶 Commute to Work</button>
+          <button onclick="triggerGroupCommute('to_home')" class="py-1.5 px-2 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/40 text-indigo-200 font-semibold text-[10px]">🏠 Go Home &amp; 📱</button>
+        </div>
+        <button onclick="triggerKitchenRefillMaintenance('all')" class="w-full py-1.5 px-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 font-semibold text-[10px]">🔧 Omar Refill Office &amp; SuperiorMed Kitchens</button>
+      </div>
+    </div>
+
+    <!-- AI Agent Chat Log -->
+    <div id="chat-messages" class="flex-1 overflow-y-auto custom-scroll flex flex-col gap-2 pr-1 text-xs">
+      <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-200 leading-relaxed">
+        Welcome to the <strong>AI 3D Office &amp; Dubai City World</strong>! Use the <strong>—</strong> buttons on any panel or <strong>👁️ Clean View</strong> to minimize tabs and watch the living city NPCs (cleaning, eating, calling, driving &amp; relaxing)!
+      </div>
+    </div>
+
+    <!-- Quick Prompt Chips -->
+    <div class="grid grid-cols-2 gap-1">
+      <button onclick="sendQuickPrompt('Derick and Laila go on a romantic Burj Khalifa sky view date with Pipoy')" class="px-2 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-yellow-400/50 text-[10px] text-yellow-200 truncate">🗼 Burj Khalifa Date</button>
+      <button onclick="sendQuickPrompt('Send selected employee to Dubai Bank ATM to withdraw cash')" class="px-2 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-emerald-400/50 text-[10px] text-emerald-200 truncate">🏧 Withdraw Cash at ATM</button>
+      <button onclick="openMobilePhoneModal('fakebook')" class="px-2 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-blue-400/50 text-[10px] text-blue-200 truncate">📘 Fakebook &amp; 📸 Intagram</button>
+      <button onclick="sendQuickPrompt('Check in at SuperiorMed Clinic Annex with Receptionist Amira, Nurse Hannah and Dr. Faris')" class="px-2 py-1 rounded-lg bg-slate-800/90 hover:bg-slate-700 border border-cyan-500/40 text-[10px] text-cyan-200 truncate">🩺 Clinic Annex Checkup</button>
+    </div>
+
+    <!-- Chat Form -->
+    <form id="chat-form" class="flex items-center gap-1.5">
+      <input id="chat-input" type="text" placeholder="Command office, Marina, Downtown, Beach, clinic..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-cyan-400" />
+      <button type="submit" class="px-3 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-extrabold text-xs">Send</button>
+    </form>
+    </div>
+    <div id="chat-resize-grip" class="resize-grip" title="Drag corner to resize">◢</div>
+  </aside>
+
+  <!-- Hire Employee Modal -->
+  <div id="hire-modal" class="hidden fixed inset-0 z-40 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass rounded-2xl p-5 w-full max-w-md flex flex-col gap-3 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-sm font-extrabold text-white">+ Hire New AI Team Member (With Dedicated House)</h3>
+        <button onclick="closeHireModal()" class="text-slate-400 hover:text-white text-sm font-bold">✕</button>
+      </div>
+      <div class="grid grid-cols-2 gap-2.5 text-xs">
+        <label class="flex flex-col gap-1">
+          <span class="text-slate-400 text-[10px]">Name</span>
+          <input id="hire-name" type="text" value="Sora" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-slate-400 text-[10px]">Role</span>
+          <input id="hire-role" type="text" value="Longevity Care Coordinator" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white" />
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-slate-400 text-[10px]">Workstation / Building</span>
+          <select id="hire-station" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white">
+            <option value="derick">Marketing HQ</option>
+            <option value="superiormed">SuperiorMed Clinic</option>
+            <option value="clinic_annex">SuperiorMed Clinic Annex</option>
+            <option value="blender">Blender 5.3 Studio</option>
+            <option value="tiktok">TikTok &amp; Facebook Studio</option>
+            <option value="supermarket">FreshMart Supermarket</option>
+            <option value="bookstore">Al-Noor Bookstore</option>
+          </select>
+        </label>
+        <label class="flex flex-col gap-1">
+          <span class="text-slate-400 text-[10px]">Avatar Style</span>
+          <select id="hire-gender" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-2 text-white">
+            <option value="female">Female</option>
+            <option value="male">Male</option>
+          </select>
+        </label>
+      </div>
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button onclick="closeHireModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancel</button>
+        <button onclick="confirmHireEmployee()" class="px-4 py-1.5 rounded-xl bg-emerald-400 text-slate-950 text-xs font-extrabold">Spawn Employee &amp; House</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Blender 5.3 Image & Video Editor Modal -->
+  <div id="blender-modal" class="hidden fixed inset-0 z-40 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass rounded-2xl p-4 w-full max-w-3xl flex flex-col gap-3 shadow-2xl border-orange-400/50">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded bg-orange-500 text-slate-950 font-extrabold text-xs">Blender 5.3</span>
+          <span class="text-sm font-extrabold text-white">Maya's Image Compositor &amp; Video VSE Studio</span>
+        </div>
+        <button onclick="closeBlenderStudio()" class="text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div class="md:col-span-2 bg-slate-950 rounded-xl border border-slate-800 p-2 flex items-center justify-center">
+          <canvas id="blender-canvas" width="640" height="360" class="rounded-lg max-h-64 w-auto"></canvas>
+        </div>
+        <div class="flex flex-col gap-2 text-xs">
+          <label class="flex flex-col gap-1">
+            <span class="text-[10px] text-slate-400 font-bold uppercase">Color Grade Preset</span>
+            <select id="blender-preset" onchange="renderBlenderPreview()" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white">
+              <option value="luxury_gold">Aurelia Luxury Gold</option>
+              <option value="clinic_teal">SuperiorMed Dubai Teal</option>
+              <option value="cyber_neon">Cyberpunk Neon Pop</option>
+              <option value="noir">Cinema Noir B&amp;W</option>
+            </select>
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-[10px] text-slate-400 font-bold uppercase">Campaign Title Overlay</span>
+            <input id="blender-title" type="text" value="AURELIA GOLD · DUBAI" oninput="renderBlenderPreview()" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-white" />
+          </label>
+          <label class="flex flex-col gap-1">
+            <span class="text-[10px] text-slate-400 font-bold uppercase">Brightness: <span id="blender-bright-val">105%</span></span>
+            <input id="blender-bright" type="range" min="60" max="150" value="105" oninput="renderBlenderPreview()" />
+          </label>
+          <div class="mt-auto flex flex-col gap-1.5">
+            <button onclick="exportBlenderToAbrar('TikTok')" class="w-full py-2 rounded-xl bg-gradient-to-r from-orange-400 to-pink-500 text-slate-950 font-extrabold text-xs">🚀 Send Render to Abrar (TikTok)</button>
+            <button onclick="exportBlenderToAbrar('Facebook')" class="w-full py-2 rounded-xl bg-blue-500 text-white font-extrabold text-xs">📘 Send Render to Abrar (Facebook)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Human-in-the-Loop Social Approval Modal -->
+  <div id="approval-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass rounded-2xl p-5 w-full max-w-md flex flex-col gap-3 shadow-2xl border-pink-400/50">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-extrabold uppercase tracking-wider text-pink-300">Human-in-the-Loop Approval Gate</span>
+        <button onclick="closeApprovalModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+      <div id="approval-summary" class="text-xs text-slate-200 bg-slate-900/90 p-3 rounded-xl border border-slate-700"></div>
+      <div class="flex justify-end gap-2">
+        <button onclick="closeApprovalModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Reject</button>
+        <button onclick="approveSocialAction()" class="px-4 py-1.5 rounded-xl bg-emerald-400 text-slate-950 text-xs font-extrabold">Approve &amp; Publish</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Smartphone Modal: Texting, Fakebook & Intagram -->
+  <div id="mobile-phone-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3">
+    <div class="glass rounded-[28px] p-4 w-full max-w-sm border-2 border-slate-600 shadow-2xl flex flex-col gap-2.5 max-h-[88vh]">
+      <!-- Phone Top Notch & User Bar -->
+      <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+        <div class="flex items-center gap-2">
+          <span class="text-sm">📱</span>
+          <div>
+            <div id="phone-owner-title" class="text-xs font-extrabold text-white">Derick's Smartphone</div>
+            <div id="phone-wallet-sub" class="text-[10px] text-emerald-300 font-semibold">Wallet: AED 1,250 · Bank: AED 18,500</div>
+          </div>
+        </div>
+        <button onclick="closeMobilePhoneModal()" class="px-2 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold">✕</button>
+      </div>
+
+      <!-- App Switcher Tabs -->
+      <div class="grid grid-cols-3 gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-700 text-[11px] font-extrabold">
+        <button id="tab-btn-texting" onclick="switchPhoneApp('texting')" class="py-1.5 rounded-lg bg-cyan-500 text-slate-950">💬 Texting</button>
+        <button id="tab-btn-fakebook" onclick="switchPhoneApp('fakebook')" class="py-1.5 rounded-lg text-slate-300 hover:text-white">📘 Fakebook</button>
+        <button id="tab-btn-intagram" onclick="switchPhoneApp('intagram')" class="py-1.5 rounded-lg text-slate-300 hover:text-white">📸 Intagram</button>
+      </div>
+
+      <!-- APP 1: TEXTING -->
+      <div id="phone-app-texting" class="flex-1 flex flex-col gap-2 min-h-[260px] overflow-hidden">
+        <div class="flex items-center gap-1.5 text-[11px]">
+          <span class="text-slate-400">To:</span>
+          <select id="sms-recipient-select" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-semibold"></select>
+        </div>
+        <div id="sms-thread-box" class="flex-1 overflow-y-auto custom-scroll flex flex-col gap-1.5 p-2 rounded-xl bg-slate-950/80 border border-slate-800 text-[11px]"></div>
+        <form onsubmit="sendEmployeeTextMessage(event)" class="flex gap-1.5">
+          <input id="sms-input" type="text" placeholder="Send text message..." class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-white" />
+          <button type="submit" class="px-3 py-1.5 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-xs">Send</button>
+        </form>
+      </div>
+
+      <!-- APP 2: FAKEBOOK -->
+      <div id="phone-app-fakebook" class="hidden flex-1 flex flex-col gap-2 min-h-[260px] overflow-hidden">
+        <div class="p-2 rounded-xl bg-blue-950/50 border border-blue-500/40 flex flex-col gap-1.5">
+          <div class="text-[11px] font-extrabold text-blue-300">📘 Fakebook · Dubai Social Network</div>
+          <div class="flex gap-1.5">
+            <input id="fb-post-input" type="text" placeholder="What's on your mind in Dubai?" class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white" />
+            <button onclick="createFakebookPost()" class="px-2.5 py-1 rounded-lg bg-blue-500 hover:bg-blue-400 text-white font-extrabold text-xs">Post</button>
+          </div>
+        </div>
+        <div id="fakebook-feed-box" class="flex-1 overflow-y-auto custom-scroll flex flex-col gap-2 pr-1 text-[11px]"></div>
+      </div>
+
+      <!-- APP 3: INTAGRAM -->
+      <div id="phone-app-intagram" class="hidden flex-1 flex flex-col gap-2 min-h-[260px] overflow-hidden">
+        <div class="p-2 rounded-xl bg-gradient-to-r from-pink-950/60 to-amber-950/50 border border-pink-500/40 flex flex-col gap-1.5">
+          <div class="text-[11px] font-extrabold text-pink-300">📸 Intagram · Stories &amp; Reels</div>
+          <div class="grid grid-cols-2 gap-1">
+            <select id="ig-scene-select" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white">
+              <option value="🗼 Burj Khalifa Sky Lounge">🗼 Burj Khalifa Sky View</option>
+              <option value="🏥 SuperiorMed Longevity Dubai">🏥 SuperiorMed Clinic</option>
+              <option value="💎 Aurelia 24K Gold Shoot">💎 Aurelia Jewellery</option>
+              <option value="🛥️ Dubai Marina Sunset Yacht">🛥️ Dubai Marina Yacht</option>
+              <option value="🏖️ Jumeirah Beach Cabana">🏖️ Jumeirah Beach</option>
+            </select>
+            <input id="ig-caption-input" type="text" placeholder="Caption..." value="Living the Dubai dream ✨" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-[10px] text-white" />
+          </div>
+          <button onclick="createIntagramPost()" class="w-full py-1 rounded-lg bg-gradient-to-r from-pink-500 to-amber-400 text-slate-950 font-extrabold text-xs">📸 Share Intagram Photo</button>
+        </div>
+        <div id="intagram-feed-box" class="flex-1 overflow-y-auto custom-scroll flex flex-col gap-2 pr-1 text-[11px]"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const appState = {
+      selectedEmployeeId: 'derick',
+      timeMode: 'morning', // morning | afternoon | sunset | night
+      weatherMode: 'clear', // clear | rain | sandstorm
+      simMinutes: 9 * 60 + 15,
+      employees: [],
+      houses: {},
+      pipoy: null,
+      npcs: [],
+      npcCars: [],
+      birds: [],
+      rainSystem: null,
+      handoffBeams: [],
+      uiMinimized: { top: false, left: false, right: false, all: false },
+      zCounter: 32,
+      activePhoneApp: 'texting',
+      smsMessages: [
+        { from: 'Derick', to: 'Laila', text: 'Hey love! Want to meet at Burj Khalifa sky deck later with Pipoy? 🗼❤️', time: '09:05 AM' },
+        { from: 'Laila', to: 'Derick', text: 'Yes! Let me finish SuperiorMed accounting & grab clinic coffee first ☕✨', time: '09:07 AM' },
+        { from: 'Maya', to: 'Abrar', text: 'Just graded the Aurelia Jewellery reel in Blender 5.3! Ready for TikTok 🎨', time: '09:12 AM' }
+      ],
+      fakebookPosts: [
+        { id: 'fb1', author: 'Derick', color: '#f59e0b', role: 'Head of Digital Marketing', text: 'Proud of the whole AI 3D Office & SuperiorMed Dubai team! Payday bonuses credited 💰🇦🇪', time: '12m ago', likes: 14 },
+        { id: 'fb2', author: 'Laila', color: '#14b8a6', role: 'Head of Accountant · SuperiorMed', text: 'SuperiorMed Longevity Clinic & Clinic Annex are welcoming guests all day with Dr. Faris, Nurse Hannah & Amira! 🏥✨', time: '28m ago', likes: 19 }
+      ],
+      intagramPosts: [
+        { id: 'ig1', author: 'Maya', color: '#f97316', location: '🗼 Burj Khalifa Sky Lounge', gradient: 'from-amber-500 via-pink-500 to-indigo-700', emoji: '🗼✨', caption: 'Golden hour above Downtown Dubai after rendering 4K reels in Blender 5.3!', likes: 32 },
+        { id: 'ig2', author: 'Abrar', color: '#ec4899', location: '🛥️ Dubai Marina Sunset Yacht', gradient: 'from-cyan-500 via-blue-600 to-slate-900', emoji: '🛥️🌅', caption: 'Viral campaign numbers hitting new records across TikTok & Fakebook!', likes: 27 }
+      ],
+      kitchens: {
+        office: { name: 'Office Kitchen & Cafeteria', level: 90 },
+        clinic: { name: 'SuperiorMed Longevity Kitchen', level: 92 }
+      },
+      washroomStalls: [
+        { occupiedBy: null, doorPivot: null, statusMat: null },
+        { occupiedBy: null, doorPivot: null, statusMat: null }
+      ],
+      pendingApproval: null
+    };
+
+    function bringPanelToFront(panel) {
+      if (!panel) return;
+      appState.zCounter += 1;
+      panel.style.zIndex = String(appState.zCounter);
+    }
+
+    function makePanelMovableAndResizable(panelId, handleId, gripId) {
+      const panel = document.getElementById(panelId);
+      const handle = document.getElementById(handleId);
+      const grip = gripId ? document.getElementById(gripId) : null;
+      if (!panel || !handle) return;
+
+      panel.addEventListener('pointerdown', () => bringPanelToFront(panel));
+
+      let isDragging = false;
+      let startX = 0, startY = 0, startLeft = 0, startTop = 0;
+
+      handle.addEventListener('pointerdown', e => {
+        if (e.target.closest('button, input, select')) return;
+        isDragging = true;
+        bringPanelToFront(panel);
+        panel.classList.add('is-dragging');
+        const rect = panel.getBoundingClientRect();
+        startX = e.clientX;
+        startY = e.clientY;
+        startLeft = rect.left;
+        startTop = rect.top;
+        panel.style.left = `${rect.left}px`;
+        panel.style.top = `${rect.top}px`;
+        panel.style.right = 'auto';
+        panel.style.bottom = 'auto';
+        if (panelId === 'top-header-bar') {
+          panel.style.width = `${rect.width}px`;
+        }
+        handle.setPointerCapture(e.pointerId);
+      });
+
+      handle.addEventListener('pointermove', e => {
+        if (!isDragging) return;
+        const rect = panel.getBoundingClientRect();
+        const maxLeft = Math.max(4, window.innerWidth - Math.min(rect.width, 140));
+        const maxTop = Math.max(4, window.innerHeight - 44);
+        const nextLeft = Math.min(maxLeft, Math.max(4, startLeft + (e.clientX - startX)));
+        const nextTop = Math.min(maxTop, Math.max(4, startTop + (e.clientY - startY)));
+        panel.style.left = `${nextLeft}px`;
+        panel.style.top = `${nextTop}px`;
+      });
+
+      const endDrag = e => {
+        if (!isDragging) return;
+        isDragging = false;
+        panel.classList.remove('is-dragging');
+        if (handle.hasPointerCapture(e.pointerId)) handle.releasePointerCapture(e.pointerId);
+      };
+      handle.addEventListener('pointerup', endDrag);
+      handle.addEventListener('pointercancel', endDrag);
+
+      if (grip) {
+        let isResizing = false;
+        let rStartX = 0, rStartY = 0, rStartW = 0, rStartH = 0;
+
+        grip.addEventListener('pointerdown', e => {
+          e.stopPropagation();
+          isResizing = true;
+          bringPanelToFront(panel);
+          const rect = panel.getBoundingClientRect();
+          rStartX = e.clientX;
+          rStartY = e.clientY;
+          rStartW = rect.width;
+          rStartH = rect.height;
+          panel.style.left = `${rect.left}px`;
+          panel.style.top = `${rect.top}px`;
+          panel.style.right = 'auto';
+          panel.style.bottom = 'auto';
+          grip.setPointerCapture(e.pointerId);
+        });
+
+        grip.addEventListener('pointermove', e => {
+          if (!isResizing) return;
+          const nextW = Math.min(window.innerWidth - 16, Math.max(230, rStartW + (e.clientX - rStartX)));
+          const nextH = Math.min(window.innerHeight - 16, Math.max(150, rStartH + (e.clientY - rStartY)));
+          panel.style.width = `${nextW}px`;
+          panel.style.height = `${nextH}px`;
+          panel.style.maxHeight = 'none';
+        });
+
+        const endResize = e => {
+          if (!isResizing) return;
+          isResizing = false;
+          if (grip.hasPointerCapture(e.pointerId)) grip.releasePointerCapture(e.pointerId);
+        };
+        grip.addEventListener('pointerup', endResize);
+        grip.addEventListener('pointercancel', endResize);
+      }
+    }
+
+    function resetAllPanelPositions() {
+      const isMobile = window.innerWidth <= 768;
+      const topBar = document.getElementById('top-header-bar');
+      const left = document.getElementById('employee-inspector');
+      const right = document.getElementById('right-chat-drawer');
+
+      if (topBar) {
+        topBar.style.left = '0.5rem';
+        topBar.style.right = '0.5rem';
+        topBar.style.top = '0.5rem';
+        topBar.style.width = '';
+      }
+      if (left) {
+        left.classList.remove('panel-minimized');
+        left.style.left = isMobile ? '0.5rem' : '0.625rem';
+        left.style.right = 'auto';
+        left.style.top = isMobile ? 'auto' : '6rem';
+        left.style.bottom = isMobile ? '0.5rem' : 'auto';
+        left.style.width = isMobile ? 'calc(100vw - 1rem)' : '20rem';
+        left.style.height = isMobile ? '42vh' : 'calc(100vh - 7rem)';
+      }
+      if (right) {
+        right.classList.remove('panel-minimized');
+        right.style.left = isMobile ? '0.5rem' : 'auto';
+        right.style.right = isMobile ? 'auto' : '0.625rem';
+        right.style.top = isMobile ? '5.4rem' : '6rem';
+        right.style.bottom = 'auto';
+        right.style.width = isMobile ? 'calc(100vw - 1rem)' : '20rem';
+        right.style.height = isMobile ? '36vh' : 'calc(100vh - 7rem)';
+      }
+      document.getElementById('min-left-btn').textContent = '—';
+      document.getElementById('min-right-btn').textContent = '—';
+    }
+
+    function toggleBrowserFullscreen() {
+      const btn = document.getElementById('fullscreen-btn');
+      const docEl = document.documentElement;
+      const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+      if (!isFs) {
+        const req = docEl.requestFullscreen || docEl.webkitRequestFullscreen || docEl.msRequestFullscreen;
+        if (req) {
+          req.call(docEl).catch(() => {});
+        }
+        document.body.classList.add('mobile-immersive');
+        if (btn) btn.textContent = '⛶ Exit Full';
+      } else {
+        const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+        if (exit) {
+          exit.call(document).catch(() => {});
+        }
+        document.body.classList.remove('mobile-immersive');
+        if (btn) btn.textContent = '⛶ Full Screen';
+      }
+      setTimeout(onWindowResize, 250);
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      const btn = document.getElementById('fullscreen-btn');
+      const isFs = Boolean(document.fullscreenElement);
+      if (btn) btn.textContent = isFs ? '⛶ Exit Full' : '⛶ Full Screen';
+      onWindowResize();
+    });
+
+    function togglePanelMinimize(panelId, btnId) {
+      const panel = document.getElementById(panelId);
+      const btn = document.getElementById(btnId);
+      if (!panel) return;
+      const isMin = panel.classList.toggle('panel-minimized');
+      if (btn) btn.textContent = isMin ? '+' : '—';
+    }
+
+    function toggleTopBarMinimize() {
+      appState.uiMinimized.top = !appState.uiMinimized.top;
+      const camRow = document.getElementById('top-camera-row');
+      const rosterBar = document.getElementById('team-roster-bar');
+      const btn = document.getElementById('min-top-btn');
+      if (camRow) camRow.classList.toggle('hidden', appState.uiMinimized.top);
+      if (rosterBar) rosterBar.classList.toggle('hidden', appState.uiMinimized.top);
+      if (btn) btn.textContent = appState.uiMinimized.top ? '+' : '—';
+    }
+
+    function toggleAllPanels() {
+      appState.uiMinimized.all = !appState.uiMinimized.all;
+      const targetState = appState.uiMinimized.all;
+      const left = document.getElementById('employee-inspector');
+      const right = document.getElementById('right-chat-drawer');
+      const camRow = document.getElementById('top-camera-row');
+      const rosterBar = document.getElementById('team-roster-bar');
+      const allBtn = document.getElementById('toggle-all-ui-btn');
+
+      if (left) left.classList.toggle('panel-minimized', targetState);
+      if (right) right.classList.toggle('panel-minimized', targetState);
+      if (camRow) camRow.classList.toggle('hidden', targetState);
+      if (rosterBar) rosterBar.classList.toggle('hidden', targetState);
+
+      document.getElementById('min-left-btn').textContent = targetState ? '+' : '—';
+      document.getElementById('min-right-btn').textContent = targetState ? '+' : '—';
+      document.getElementById('min-top-btn').textContent = targetState ? '+' : '—';
+      appState.uiMinimized.top = targetState;
+      if (allBtn) allBtn.textContent = targetState ? '🖥️ Show Tabs' : '👁️ Clean View';
+    }
+
+    const STATIONS = {
+      derick: {
+        name: 'Digital Marketing HQ (Derick)',
+        isExterior: false,
+        pos: new THREE.Vector3(-7.6, 0, -5.6),
+        standSlots: [new THREE.Vector3(-7.6, 0, -4.4), new THREE.Vector3(-6.2, 0, -4.4)],
+        labelAnchor: new THREE.Vector3(-7.6, 2.75, -5.6)
+      },
+      priority_board: {
+        name: 'Department Priority Board',
+        isExterior: false,
+        pos: new THREE.Vector3(-2.6, 0, -7.8),
+        standSlots: [new THREE.Vector3(-2.6, 0, -6.5)],
+        labelAnchor: new THREE.Vector3(-2.6, 2.8, -7.8)
+      },
+      coffee: {
+        name: 'Office Kitchen & Cafeteria',
+        isExterior: false,
+        pos: new THREE.Vector3(7.4, 0, -6.4),
+        standSlots: [new THREE.Vector3(6.6, 0, -5.1), new THREE.Vector3(8.0, 0, -5.1), new THREE.Vector3(7.3, 0, -4.3)],
+        labelAnchor: new THREE.Vector3(7.4, 2.65, -6.4)
+      },
+      washroom: {
+        name: 'Office Washroom',
+        isExterior: false,
+        pos: new THREE.Vector3(8.2, 0, 3.8),
+        standSlots: [new THREE.Vector3(7.2, 0, 3.2), new THREE.Vector3(7.2, 0, 4.4)],
+        labelAnchor: new THREE.Vector3(8.2, 2.65, 3.8)
+      },
+      gmail: {
+        name: 'Gmail Communications Desk',
+        isExterior: false,
+        pos: new THREE.Vector3(-7.4, 0, 1.4),
+        standSlots: [new THREE.Vector3(-7.4, 0, 2.5)],
+        labelAnchor: new THREE.Vector3(-7.4, 2.45, 1.4)
+      },
+      drive: {
+        name: 'Google Drive Vault',
+        isExterior: false,
+        pos: new THREE.Vector3(-3.6, 0, 1.4),
+        standSlots: [new THREE.Vector3(-3.6, 0, 2.5)],
+        labelAnchor: new THREE.Vector3(-3.6, 2.45, 1.4)
+      },
+      blender: {
+        name: 'Blender 5.3 Creative Studio',
+        isExterior: false,
+        pos: new THREE.Vector3(0.4, 0, -2.2),
+        standSlots: [new THREE.Vector3(0.4, 0, -1.0)],
+        labelAnchor: new THREE.Vector3(0.4, 2.65, -2.2)
+      },
+      facebook: {
+        name: 'Facebook Pages Desk',
+        isExterior: false,
+        pos: new THREE.Vector3(3.6, 0, 1.4),
+        standSlots: [new THREE.Vector3(3.6, 0, 2.5)],
+        labelAnchor: new THREE.Vector3(3.6, 2.45, 1.4)
+      },
+      tiktok: {
+        name: 'TikTok Creator Studio',
+        isExterior: false,
+        pos: new THREE.Vector3(6.2, 0, 1.4),
+        standSlots: [new THREE.Vector3(6.2, 0, 2.5)],
+        labelAnchor: new THREE.Vector3(6.2, 2.45, 1.4)
+      },
+      hub: {
+        name: 'Central AI Orchestration Hub',
+        isExterior: false,
+        pos: new THREE.Vector3(0, 0, 3.8),
+        standSlots: [new THREE.Vector3(0, 0, 4.8)],
+        labelAnchor: new THREE.Vector3(0, 2.4, 3.8)
+      },
+      superiormed: {
+        name: 'SuperiorMed: Longevity Clinic Dubai | Personalized Care',
+        isExterior: true,
+        pos: new THREE.Vector3(18.6, 0, 2.2),
+        corridorEntry: new THREE.Vector3(18.6, 0, 8.4),
+        standSlots: [new THREE.Vector3(16.2, 0, 1.6), new THREE.Vector3(19.4, 0, 1.6), new THREE.Vector3(17.8, 0, 3.5)],
+        labelAnchor: new THREE.Vector3(18.6, 5.1, 2.2)
+      },
+      clinic_coffee: {
+        name: 'SuperiorMed Kitchen & Longevity Coffee Bar',
+        isExterior: true,
+        pos: new THREE.Vector3(21.8, 0, -1.3),
+        corridorEntry: new THREE.Vector3(18.6, 0, 8.4),
+        standSlots: [new THREE.Vector3(21.0, 0, -0.3), new THREE.Vector3(22.2, 0, -0.3)],
+        labelAnchor: new THREE.Vector3(21.8, 2.75, -1.3)
+      },
+      clinic_annex: {
+        name: 'SuperiorMed Clinic Annex (Doctor, Nurse & Reception)',
+        isExterior: true,
+        pos: new THREE.Vector3(31.2, 0, 2.2),
+        corridorEntry: new THREE.Vector3(31.2, 0, 8.4),
+        standSlots: [
+          new THREE.Vector3(29.0, 0, 3.3),  // Receptionist Amira
+          new THREE.Vector3(30.4, 0, -0.8), // Nurse Hannah
+          new THREE.Vector3(33.2, 0, -0.8), // Dr. Faris
+          new THREE.Vector3(31.2, 0, 1.6)   // Patient / Visitor
+        ],
+        labelAnchor: new THREE.Vector3(31.2, 4.9, 2.2)
+      },
+      bookstore: {
+        name: 'Al-Noor Bookstore & Office Supplies',
+        isExterior: true,
+        pos: new THREE.Vector3(-19.5, 0, 2.2),
+        corridorEntry: new THREE.Vector3(-19.5, 0, 8.4),
+        standSlots: [new THREE.Vector3(-19.5, 0, 1.6), new THREE.Vector3(-18.0, 0, 2.4)],
+        labelAnchor: new THREE.Vector3(-19.5, 4.4, 2.2)
+      },
+      supermarket: {
+        name: 'FreshMart Supermarket & Grocery',
+        isExterior: true,
+        pos: new THREE.Vector3(-25.5, 0, 21.5),
+        corridorEntry: new THREE.Vector3(-25.5, 0, 15.2),
+        standSlots: [new THREE.Vector3(-25.5, 0, 20.4), new THREE.Vector3(-23.8, 0, 20.6), new THREE.Vector3(-27.0, 0, 20.6)],
+        labelAnchor: new THREE.Vector3(-25.5, 4.6, 21.5)
+      },
+      jewellery: {
+        name: 'Aurelia Jewellery Boutique',
+        isExterior: true,
+        pos: new THREE.Vector3(-12.5, 0, 21.5),
+        corridorEntry: new THREE.Vector3(-12.5, 0, 15.2),
+        standSlots: [new THREE.Vector3(-12.5, 0, 20.2), new THREE.Vector3(-11.2, 0, 20.4)],
+        labelAnchor: new THREE.Vector3(-12.5, 4.4, 21.5)
+      },
+      restaurant: {
+        name: 'Le Petit Bistro Restaurant',
+        isExterior: true,
+        pos: new THREE.Vector3(14.5, 0, 21.5),
+        corridorEntry: new THREE.Vector3(14.5, 0, 15.2),
+        standSlots: [new THREE.Vector3(14.5, 0, 20.2), new THREE.Vector3(13.0, 0, 21.8), new THREE.Vector3(16.0, 0, 21.8)],
+        labelAnchor: new THREE.Vector3(14.5, 4.4, 21.5)
+      },
+      park: {
+        name: 'City Park & Jogging Track',
+        isExterior: true,
+        pos: new THREE.Vector3(1.0, 0, 22.0),
+        corridorEntry: new THREE.Vector3(1.0, 0, 15.2),
+        standSlots: [new THREE.Vector3(1.0, 0, 22.0)],
+        labelAnchor: new THREE.Vector3(1.0, 3.6, 22.0)
+      },
+      houses: {
+        name: 'See-Through Residential Houses',
+        isExterior: true,
+        pos: new THREE.Vector3(2.0, 0, 35.6),
+        corridorEntry: new THREE.Vector3(2.0, 0, 31.0),
+        standSlots: [new THREE.Vector3(2.0, 0, 34.5)],
+        labelAnchor: new THREE.Vector3(2.0, 4.5, 35.6)
+      },
+      marina: {
+        name: 'Dubai Marina Waterfront & Yacht Harbor',
+        isExterior: true,
+        pos: new THREE.Vector3(-44.0, 0, 12.0),
+        corridorEntry: new THREE.Vector3(-37.0, 0, 13.8),
+        standSlots: [new THREE.Vector3(-41.0, 0, 10.5), new THREE.Vector3(-41.0, 0, 14.0), new THREE.Vector3(-43.0, 0, 12.2)],
+        labelAnchor: new THREE.Vector3(-46.0, 7.5, 12.0)
+      },
+      downtown_plaza: {
+        name: 'Downtown Palm Boulevard & Fountain Plaza',
+        isExterior: true,
+        pos: new THREE.Vector3(50.0, 0, 12.0),
+        corridorEntry: new THREE.Vector3(43.0, 0, 13.8),
+        standSlots: [new THREE.Vector3(47.0, 0, 10.5), new THREE.Vector3(47.0, 0, 14.0), new THREE.Vector3(50.0, 0, 15.5)],
+        labelAnchor: new THREE.Vector3(50.0, 8.2, 12.0)
+      },
+      jumeirah_beach: {
+        name: 'Jumeirah Beachfront & Sunset Boardwalk',
+        isExterior: true,
+        pos: new THREE.Vector3(6.0, 0, 49.0),
+        corridorEntry: new THREE.Vector3(6.0, 0, 43.0),
+        standSlots: [new THREE.Vector3(2.0, 0, 47.5), new THREE.Vector3(6.0, 0, 47.5), new THREE.Vector3(10.0, 0, 47.5)],
+        labelAnchor: new THREE.Vector3(6.0, 4.8, 50.0)
+      },
+      atm: {
+        name: 'Dubai Islamic & Emirates Bank ATM',
+        isExterior: true,
+        pos: new THREE.Vector3(-12.2, 0, 9.2),
+        corridorEntry: new THREE.Vector3(-12.2, 0, 10.2),
+        standSlots: [new THREE.Vector3(-12.2, 0, 10.1), new THREE.Vector3(-11.2, 0, 10.1)],
+        labelAnchor: new THREE.Vector3(-12.2, 3.1, 9.2)
+      },
+      burj_khalifa: {
+        name: 'Burj Khalifa Observation Deck & Romantic Dating Plaza',
+        isExterior: true,
+        pos: new THREE.Vector3(36.0, 0, 22.5),
+        corridorEntry: new THREE.Vector3(36.0, 0, 15.2),
+        standSlots: [
+          new THREE.Vector3(34.8, 0, 21.8),
+          new THREE.Vector3(36.0, 0, 21.8),
+          new THREE.Vector3(37.2, 0, 22.8),
+          new THREE.Vector3(34.5, 0, 23.4)
+        ],
+        labelAnchor: new THREE.Vector3(36.0, 14.5, 22.5)
+      }
+    };
+
+    let scene, camera, renderer, controls, clock;
+    let ambientLight, sunLight, hemiLight;
+    let clinicHoloRing, fountainRing, burjBeacon, jewelRings = [], steamParticles = [], yachts = [], parkCurve;
+    const clickableObjects = [];
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+
+    function registerClickable(mesh, type, id) {
+      mesh.userData.clickType = type;
+      mesh.userData.clickId = id;
+      clickableObjects.push(mesh);
+    }
+
+    function createSignTexture(title, subtitle, bgHex = '#0f172a', accentHex = '#38bdf8') {
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = bgHex;
+      ctx.fillRect(0, 0, 512, 128);
+      ctx.strokeStyle = accentHex;
+      ctx.lineWidth = 6;
+      ctx.strokeRect(4, 4, 504, 120);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 28px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(title, 256, 56);
+      ctx.fillStyle = accentHex;
+      ctx.font = '600 18px Inter, sans-serif';
+      ctx.fillText(subtitle, 256, 94);
+      const tex = new THREE.CanvasTexture(canvas);
+      return tex;
+    }
+
+    function createCharacterFaceTexture(skinHex, eyeColor = '#1e293b', isFemale = false) {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      const col = new THREE.Color(skinHex);
+      ctx.fillStyle = `#${col.getHexString()}`;
+      ctx.fillRect(0, 0, 256, 256);
+
+      // Soft cheek blush
+      ctx.fillStyle = 'rgba(244, 114, 182, 0.22)';
+      ctx.beginPath(); ctx.arc(82, 152, 18, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(174, 152, 18, 0, Math.PI * 2); ctx.fill();
+
+      // Eyebrows
+      ctx.strokeStyle = '#29150c';
+      ctx.lineWidth = isFemale ? 4 : 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(74, 102); ctx.quadraticCurveTo(92, 95, 110, 102); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(146, 102); ctx.quadraticCurveTo(164, 95, 182, 102); ctx.stroke();
+
+      // Eyes
+      [92, 164].forEach(ex => {
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.ellipse(ex, 122, 14, 10, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = eyeColor;
+        ctx.beginPath(); ctx.arc(ex, 122, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#020617';
+        ctx.beginPath(); ctx.arc(ex, 122, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(ex - 2.5, 119, 2, 0, Math.PI * 2); ctx.fill();
+      });
+
+      // Nose & Smile
+      ctx.strokeStyle = 'rgba(120, 53, 15, 0.35)';
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(128, 125); ctx.lineTo(124, 148); ctx.lineTo(132, 150); ctx.stroke();
+
+      ctx.strokeStyle = isFemale ? '#be185d' : '#7c2d12';
+      ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(128, 166, 18, 0.15 * Math.PI, 0.85 * Math.PI); ctx.stroke();
+
+      const tex = new THREE.CanvasTexture(c);
+      return tex;
+    }
+
+    function init3DScene() {
+      const container = document.getElementById('canvas-container');
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0c4a6e);
+      scene.fog = new THREE.FogExp2(0x0c4a6e, 0.0055);
+
+      camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 320);
+      camera.position.set(0, 16.5, 25.5);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.12;
+      container.appendChild(renderer.domElement);
+
+      if (typeof THREE.OrbitControls !== 'undefined') {
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.06;
+        controls.maxPolarAngle = Math.PI / 2 - 0.04;
+        controls.minDistance = 5;
+        controls.maxDistance = 95;
+        controls.target.set(0, 1.2, 4.0);
+      } else {
+        controls = { target: new THREE.Vector3(0, 1.2, 4.0), update: () => camera.lookAt(0, 1.2, 4.0) };
+      }
+
+      clock = new THREE.Clock();
+
+      // Lighting
+      hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x1e293b, 0.85);
+      scene.add(hemiLight);
+
+      ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+      scene.add(ambientLight);
+
+      sunLight = new THREE.DirectionalLight(0xfffbeb, 1.35);
+      sunLight.position.set(28, 46, 32);
+      sunLight.castShadow = true;
+      sunLight.shadow.mapSize.width = 2048;
+      sunLight.shadow.mapSize.height = 2048;
+      scene.add(sunLight);
+
+      buildDubaiCityGroundAndSkyline();
+      buildNeighboringDubaiCities();
+      buildATMMachine();
+      buildBurjKhalifaLandmark();
+      buildAI3DOffice();
+      buildSuperiorMedClinic();
+      buildSuperiorMedAnnex();
+      buildBookstoreSupplies();
+      buildFreshMartSupermarket();
+      buildJewelleryStore();
+      buildLePetitBistro();
+      buildCityParkAndJoggingTrack();
+      buildCityTrees();
+      initInitialEmployees();
+      buildPipoyDog();
+      initAutonomousNPCsAndVendors();
+      initFlyingBirds();
+      initWeatherParticles();
+
+      makePanelMovableAndResizable('top-header-bar', 'top-drag-bar', null);
+      makePanelMovableAndResizable('employee-inspector', 'emp-drag-handle', 'emp-resize-grip');
+      makePanelMovableAndResizable('right-chat-drawer', 'chat-drag-handle', 'chat-resize-grip');
+      if (window.innerWidth <= 768) {
+        togglePanelMinimize('employee-inspector', 'min-left-btn');
+      }
+
+      window.addEventListener('resize', onWindowResize);
+      renderer.domElement.addEventListener('pointerdown', onCanvasClick);
+      document.querySelectorAll('.station-label').forEach(lbl => {
+        lbl.addEventListener('click', () => {
+          const stKey = lbl.getAttribute('data-station');
+          if (stKey) {
+            openStationPanel(stKey);
+            if (['superiormed', 'clinic_annex', 'supermarket', 'bookstore', 'jewellery', 'restaurant', 'park', 'houses', 'atm', 'burj_khalifa', 'marina', 'downtown_plaza', 'jumeirah_beach'].includes(stKey)) {
+              setCameraPreset(stKey);
+            }
+          }
+        });
+      });
+
+      applyTimeAndWeatherVisuals();
+      renderTeamRosterBar();
+      selectEmployee('derick');
+      animate();
+    }
+
+    function buildATMMachine() {
+      const group = new THREE.Group();
+      group.position.set(-12.2, 0, 9.2);
+
+      const kiosk = new THREE.Mesh(
+        new THREE.BoxGeometry(1.3, 2.25, 0.9),
+        new THREE.MeshStandardMaterial({ color: 0x064e3b, metalness: 0.65, roughness: 0.25 })
+      );
+      kiosk.position.y = 1.12;
+      kiosk.castShadow = true;
+      registerClickable(kiosk, 'station', 'atm');
+      group.add(kiosk);
+
+      const screen = new THREE.Mesh(
+        new THREE.BoxGeometry(0.86, 0.62, 0.08),
+        new THREE.MeshStandardMaterial({ color: 0x022c22, emissive: 0x10b981, emissiveIntensity: 0.95 })
+      );
+      screen.position.set(0, 1.42, 0.44);
+      registerClickable(screen, 'station', 'atm');
+      group.add(screen);
+
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(1.5, 0.42, 0.14),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('24/7 DUBAI ATM', 'AED Cash Withdrawal', '#022c22', '#34d399') })
+      );
+      sign.position.set(0, 2.45, 0.2);
+      registerClickable(sign, 'station', 'atm');
+      group.add(sign);
+
+      scene.add(group);
+    }
+
+    function buildBurjKhalifaLandmark() {
+      const group = new THREE.Group();
+      group.position.set(36.0, 0, 22.5);
+
+      // Marble Observation & Romantic Lakeside Terrace
+      const plaza = new THREE.Mesh(
+        new THREE.CylinderGeometry(6.2, 6.6, 0.24, 32),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.35 })
+      );
+      plaza.position.y = 0.1;
+      registerClickable(plaza, 'station', 'burj_khalifa');
+      group.add(plaza);
+
+      // Glowing Fountain Ring around Burj Base
+      const lakeRing = new THREE.Mesh(
+        new THREE.TorusGeometry(5.2, 0.45, 10, 36),
+        new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x38bdf8, emissiveIntensity: 0.45 })
+      );
+      lakeRing.rotation.x = Math.PI / 2;
+      lakeRing.position.y = 0.22;
+      registerClickable(lakeRing, 'station', 'burj_khalifa');
+      group.add(lakeRing);
+
+      // Tiered Y-Shaped Spire Tower Sections
+      const tiers = [
+        { rTop: 1.9, rBot: 2.3, h: 6.5, y: 3.4, c: 0x0f172a },
+        { rTop: 1.45, rBot: 1.85, h: 6.0, y: 9.5, c: 0x1e3a8a },
+        { rTop: 1.0, rBot: 1.4, h: 5.5, y: 15.1, c: 0x0284c7 },
+        { rTop: 0.55, rBot: 0.95, h: 5.0, y: 20.2, c: 0x38bdf8 },
+        { rTop: 0.12, rBot: 0.48, h: 6.5, y: 25.8, c: 0xfef08a }
+      ];
+      tiers.forEach(t => {
+        const seg = new THREE.Mesh(
+          new THREE.CylinderGeometry(t.rTop, t.rBot, t.h, 6),
+          new THREE.MeshStandardMaterial({
+            color: t.c,
+            metalness: 0.85,
+            roughness: 0.15,
+            emissive: 0x38bdf8,
+            emissiveIntensity: 0.28
+          })
+        );
+        seg.position.y = t.y;
+        seg.castShadow = true;
+        registerClickable(seg, 'station', 'burj_khalifa');
+        group.add(seg);
+      });
+
+      // Romantic Heart & Sky View Arch on Terrace
+      const arch = new THREE.Mesh(
+        new THREE.TorusGeometry(1.35, 0.08, 12, 28, Math.PI),
+        new THREE.MeshStandardMaterial({ color: 0xfde047, emissive: 0xf59e0b, emissiveIntensity: 0.75 })
+      );
+      arch.position.set(0, 0.25, -1.6);
+      registerClickable(arch, 'station', 'burj_khalifa');
+      group.add(arch);
+
+      burjBeacon = new THREE.Mesh(
+        new THREE.SphereGeometry(0.32, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0xfef08a })
+      );
+      burjBeacon.position.set(0, 29.3, 0);
+      group.add(burjBeacon);
+
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(7.2, 0.9, 0.2),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('BURJ KHALIFA · AT THE TOP', 'Dubai Sky View · Romantic Dating Promenade', '#0f172a', '#fde047') })
+      );
+      sign.position.set(0, 3.6, -4.6);
+      registerClickable(sign, 'station', 'burj_khalifa');
+      group.add(sign);
+
+      scene.add(group);
+    }
+
+    function buildDubaiCityGroundAndSkyline() {
+      // Main City Ground
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(240, 200),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85 })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.set(4, -0.18, 16);
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      // Main East-West Boulevard Road (z = 12) & Residential Road (z = 30)
+      [12.0, 29.8].forEach(rz => {
+        const road = new THREE.Mesh(
+          new THREE.BoxGeometry(165, 0.06, 5.4),
+          new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.75 })
+        );
+        road.position.set(4, -0.14, rz);
+        scene.add(road);
+
+        for (let dx = -72; dx <= 80; dx += 4.5) {
+          const dash = new THREE.Mesh(
+            new THREE.BoxGeometry(2.1, 0.07, 0.16),
+            new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+          );
+          dash.position.set(dx, -0.13, rz);
+          scene.add(dash);
+        }
+      });
+
+      // Zebra Crosswalks
+      [-41.0, -25.5, -12.5, 0, 14.5, 18.6, 31.2, 47.0].forEach(cx => {
+        for (let s = -1.8; s <= 1.8; s += 0.72) {
+          const stripe = new THREE.Mesh(
+            new THREE.BoxGeometry(0.42, 0.08, 4.8),
+            new THREE.MeshBasicMaterial({ color: 0xf8fafc })
+          );
+          stripe.position.set(cx + s, -0.13, 12.0);
+          scene.add(stripe);
+        }
+      });
+
+      // Dubai Skyline Backdrop Towers (z = -24)
+      const towerSpecs = [
+        { x: -48, w: 6.5, h: 34, d: 6.5, c: 0x0369a1 },
+        { x: -34, w: 6, h: 28, d: 6, c: 0x1e3a8a },
+        { x: -22, w: 7, h: 36, d: 7, c: 0x0f766e },
+        { x: -10, w: 6, h: 30, d: 6, c: 0x312e81 },
+        { x: 2, w: 5.5, h: 54, d: 5.5, c: 0x0284c7, spire: true }, // Burj-inspired Spire
+        { x: 15, w: 7, h: 34, d: 7, c: 0x115e59 },
+        { x: 28, w: 6.5, h: 40, d: 6.5, c: 0x1e40af },
+        { x: 41, w: 7, h: 31, d: 7, c: 0x0f172a },
+        { x: 54, w: 6.5, h: 38, d: 6.5, c: 0x1d4ed8 }
+      ];
+      towerSpecs.forEach(t => {
+        const tower = new THREE.Mesh(
+          new THREE.BoxGeometry(t.w, t.h, t.d),
+          new THREE.MeshStandardMaterial({ color: t.c, metalness: 0.65, roughness: 0.25, emissive: 0x0ea5e9, emissiveIntensity: 0.14 })
+        );
+        tower.position.set(t.x, t.h / 2 - 0.2, -24);
+        scene.add(tower);
+        if (t.spire) {
+          const spire = new THREE.Mesh(
+            new THREE.ConeGeometry(1.1, 14, 8),
+            new THREE.MeshStandardMaterial({ color: 0xe0f2fe, emissive: 0x38bdf8, emissiveIntensity: 0.6 })
+          );
+          spire.position.set(t.x, t.h + 6.5, -24);
+          scene.add(spire);
+        }
+      });
+    }
+
+    function buildNeighboringDubaiCities() {
+      // 1. DUBAI MARINA WATERFRONT & YACHT HARBOR (West City District: x = -48)
+      const marinaGroup = new THREE.Group();
+      const canal = new THREE.Mesh(
+        new THREE.BoxGeometry(16, 0.16, 44),
+        new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.18, metalness: 0.65, emissive: 0x0369a1, emissiveIntensity: 0.25 })
+      );
+      canal.position.set(-51, -0.1, 15);
+      registerClickable(canal, 'station', 'marina');
+      marinaGroup.add(canal);
+
+      const boardwalk = new THREE.Mesh(
+        new THREE.BoxGeometry(5.5, 0.14, 44),
+        new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.65 })
+      );
+      boardwalk.position.set(-40.5, -0.09, 15);
+      registerClickable(boardwalk, 'station', 'marina');
+      marinaGroup.add(boardwalk);
+
+      const marinaSign = new THREE.Mesh(
+        new THREE.BoxGeometry(10.5, 1.0, 0.24),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('DUBAI MARINA CITY', 'Waterfront Towers · Yacht Harbor · Promenade', '#082f49', '#38bdf8') })
+      );
+      marinaSign.position.set(-43.5, 6.2, 12.0);
+      marinaSign.rotation.y = Math.PI / 2;
+      registerClickable(marinaSign, 'station', 'marina');
+      marinaGroup.add(marinaSign);
+
+      // Marina High-Rise Towers
+      [
+        { x: -62, z: -2, h: 24, c: 0x0f172a },
+        { x: -62, z: 12, h: 31, c: 0x0284c7 },
+        { x: -62, z: 26, h: 22, c: 0x115e59 }
+      ].forEach(mt => {
+        const tower = new THREE.Mesh(
+          new THREE.BoxGeometry(6.5, mt.h, 6.5),
+          new THREE.MeshStandardMaterial({ color: mt.c, metalness: 0.7, roughness: 0.2 })
+        );
+        tower.position.set(mt.x, mt.h / 2 - 0.1, mt.z);
+        registerClickable(tower, 'station', 'marina');
+        marinaGroup.add(tower);
+      });
+
+      // Cruising Marina Yachts
+      [-48.5, -53.5].forEach((yx, yi) => {
+        const yacht = new THREE.Group();
+        const hull = new THREE.Mesh(
+          new THREE.BoxGeometry(1.6, 0.55, 4.4),
+          new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 })
+        );
+        hull.position.y = 0.25;
+        const deck = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 0.48, 2.2),
+          new THREE.MeshStandardMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.7 })
+        );
+        deck.position.set(0, 0.72, -0.2);
+        yacht.add(hull, deck);
+        yacht.position.set(yx, 0.02, yi === 0 ? 4 : 24);
+        registerClickable(yacht, 'station', 'marina');
+        marinaGroup.add(yacht);
+        yachts.push({ group: yacht, dir: yi === 0 ? 1 : -1, speed: 2.2 + yi * 0.5 });
+      });
+      scene.add(marinaGroup);
+
+      // 2. DOWNTOWN PALM BOULEVARD & FOUNTAIN PLAZA (East City District: x = 50)
+      const downtownGroup = new THREE.Group();
+      const plaza = new THREE.Mesh(
+        new THREE.BoxGeometry(18, 0.16, 36),
+        new THREE.MeshStandardMaterial({ color: 0x292524, roughness: 0.45 })
+      );
+      plaza.position.set(52, -0.09, 14);
+      registerClickable(plaza, 'station', 'downtown_plaza');
+      downtownGroup.add(plaza);
+
+      // Animated Golden Fountain
+      const fountainPool = new THREE.Mesh(
+        new THREE.CylinderGeometry(3.6, 3.8, 0.35, 28),
+        new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.15, emissive: 0x0284c7, emissiveIntensity: 0.35 })
+      );
+      fountainPool.position.set(51, 0.1, 18);
+      registerClickable(fountainPool, 'station', 'downtown_plaza');
+      downtownGroup.add(fountainPool);
+
+      fountainRing = new THREE.Mesh(
+        new THREE.TorusGeometry(2.1, 0.12, 12, 32),
+        new THREE.MeshBasicMaterial({ color: 0xfde047 })
+      );
+      fountainRing.rotation.x = Math.PI / 2;
+      fountainRing.position.set(51, 1.35, 18);
+      downtownGroup.add(fountainRing);
+
+      const downtownSign = new THREE.Mesh(
+        new THREE.BoxGeometry(11.0, 1.0, 0.24),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('DOWNTOWN DUBAI DISTRICT', 'Fountain Plaza · Luxury Retail · Financial Towers', '#1c1917', '#fbbf24') })
+      );
+      downtownSign.position.set(48, 6.6, 12.0);
+      downtownSign.rotation.y = -Math.PI / 2;
+      registerClickable(downtownSign, 'station', 'downtown_plaza');
+      downtownGroup.add(downtownSign);
+
+      [
+        { x: 57, z: 3, h: 29, c: 0x312e81 },
+        { x: 57, z: 16, h: 36, c: 0x1e3a8a },
+        { x: 57, z: 27, h: 25, c: 0x0f766e }
+      ].forEach(dt => {
+        const tower = new THREE.Mesh(
+          new THREE.BoxGeometry(6.5, dt.h, 6.5),
+          new THREE.MeshStandardMaterial({ color: dt.c, metalness: 0.65, roughness: 0.25 })
+        );
+        tower.position.set(dt.x, dt.h / 2 - 0.1, dt.z);
+        registerClickable(tower, 'station', 'downtown_plaza');
+        downtownGroup.add(tower);
+      });
+      scene.add(downtownGroup);
+
+      // 3. JUMEIRAH BEACHFRONT & SUNSET BOARDWALK (South Coastal District: z = 49)
+      const beachGroup = new THREE.Group();
+      const boardwalkSouth = new THREE.Mesh(
+        new THREE.BoxGeometry(110, 0.16, 4.2),
+        new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.65 })
+      );
+      boardwalkSouth.position.set(6, -0.09, 43.2);
+      registerClickable(boardwalkSouth, 'station', 'jumeirah_beach');
+      beachGroup.add(boardwalkSouth);
+
+      const sand = new THREE.Mesh(
+        new THREE.BoxGeometry(110, 0.14, 11.0),
+        new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.9 })
+      );
+      sand.position.set(6, -0.1, 50.5);
+      registerClickable(sand, 'station', 'jumeirah_beach');
+      beachGroup.add(sand);
+
+      const sea = new THREE.Mesh(
+        new THREE.BoxGeometry(130, 0.14, 24.0),
+        new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.15, metalness: 0.55, emissive: 0x0891b2, emissiveIntensity: 0.25 })
+      );
+      sea.position.set(6, -0.12, 67.5);
+      registerClickable(sea, 'station', 'jumeirah_beach');
+      beachGroup.add(sea);
+
+      const beachSign = new THREE.Mesh(
+        new THREE.BoxGeometry(11.5, 0.95, 0.24),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('JUMEIRAH BEACH CITY', 'Arabian Gulf Coast · Cabanas · Sunset Walk', '#083344', '#67e8f9') })
+      );
+      beachSign.position.set(6.0, 3.8, 44.5);
+      registerClickable(beachSign, 'station', 'jumeirah_beach');
+      beachGroup.add(beachSign);
+
+      [-14, -2, 10, 22].forEach((bx, bi) => {
+        const umbrella = new THREE.Mesh(
+          new THREE.ConeGeometry(1.75, 0.75, 12),
+          new THREE.MeshStandardMaterial({ color: bi % 2 === 0 ? 0xf43f5e : 0x0ea5e9 })
+        );
+        umbrella.position.set(bx, 2.2, 50.0);
+        beachGroup.add(umbrella);
+
+        const pole = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.05, 0.05, 2.2, 8),
+          new THREE.MeshStandardMaterial({ color: 0xf8fafc })
+        );
+        pole.position.set(bx, 1.1, 50.0);
+        beachGroup.add(pole);
+
+        const lounger = new THREE.Mesh(
+          new THREE.BoxGeometry(0.85, 0.25, 1.8),
+          new THREE.MeshStandardMaterial({ color: 0xffffff })
+        );
+        lounger.position.set(bx + 0.9, 0.15, 50.2);
+        beachGroup.add(lounger);
+      });
+
+      scene.add(beachGroup);
+    }
+
+    function buildAI3DOffice() {
+      const group = new THREE.Group();
+
+      // Office Hardwood & Slate Floor
+      const floor = new THREE.Mesh(
+        new THREE.BoxGeometry(21.0, 0.2, 16.5),
+        new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.45, metalness: 0.15 })
+      );
+      floor.position.set(0, -0.08, -1.2);
+      floor.receiveShadow = true;
+      group.add(floor);
+
+      // Glass Walls
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.2, roughness: 0.1 });
+      const backWall = new THREE.Mesh(
+        new THREE.BoxGeometry(21.0, 3.6, 0.2),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 })
+      );
+      backWall.position.set(0, 1.8, -9.4);
+      group.add(backWall);
+
+      [-10.4, 10.4].forEach(wx => {
+        const side = new THREE.Mesh(new THREE.BoxGeometry(0.16, 3.5, 16.4), glassMat);
+        side.position.set(wx, 1.75, -1.2);
+        group.add(side);
+      });
+
+      const officeSign = new THREE.Mesh(
+        new THREE.BoxGeometry(11.5, 0.9, 0.22),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('AI 3D OFFICE · DIGITAL MARKETING HQ', 'Gmail · Drive · Blender 5.3 · Facebook · TikTok', '#0f172a', '#fbbf24') })
+      );
+      officeSign.position.set(0, 4.1, 7.0);
+      group.add(officeSign);
+
+      // Helper to build a workstation desk
+      const createDesk = (x, z, w, d, colorHex, stationKey) => {
+        const desk = new THREE.Mesh(
+          new THREE.BoxGeometry(w, 0.82, d),
+          new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.35, metalness: 0.25 })
+        );
+        desk.position.set(x, 0.41, z);
+        desk.castShadow = true;
+        registerClickable(desk, 'station', stationKey);
+        group.add(desk);
+
+        const monitor = new THREE.Mesh(
+          new THREE.BoxGeometry(1.15, 0.65, 0.08),
+          new THREE.MeshStandardMaterial({ color: 0x020617, emissive: colorHex, emissiveIntensity: 0.55 })
+        );
+        monitor.position.set(x, 1.18, z - 0.18);
+        registerClickable(monitor, 'station', stationKey);
+        group.add(monitor);
+      };
+
+      createDesk(-7.6, -5.6, 2.8, 1.3, 0xf59e0b, 'derick');
+      createDesk(-7.4, 1.4, 2.2, 1.1, 0xf43f5e, 'gmail');
+      createDesk(-3.6, 1.4, 2.2, 1.1, 0x10b981, 'drive');
+      createDesk(0.4, -2.2, 2.8, 1.25, 0xf97316, 'blender');
+      createDesk(3.6, 1.4, 2.1, 1.1, 0x3b82f6, 'facebook');
+      createDesk(6.2, 1.4, 2.1, 1.1, 0xec4899, 'tiktok');
+
+      // Priority Board on Back Wall
+      const board = new THREE.Mesh(
+        new THREE.BoxGeometry(3.6, 1.8, 0.14),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('DAILY PRIORITY BOARD', 'P1: SuperiorMed & Jewellery Reels · P2: Social', '#1e1b4b', '#a5b4fc') })
+      );
+      board.position.set(-2.6, 2.0, -9.2);
+      registerClickable(board, 'station', 'priority_board');
+      group.add(board);
+
+      // Office Kitchen & Cafeteria (North-East corner of Office)
+      const kitchenCounter = new THREE.Mesh(
+        new THREE.BoxGeometry(3.2, 0.92, 1.1),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.25 })
+      );
+      kitchenCounter.position.set(7.4, 0.46, -6.4);
+      registerClickable(kitchenCounter, 'station', 'coffee');
+      group.add(kitchenCounter);
+
+      const espresso = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.6, 0.55),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 })
+      );
+      espresso.position.set(7.2, 1.22, -6.35);
+      registerClickable(espresso, 'station', 'coffee');
+      group.add(espresso);
+
+      for (let i = 0; i < 4; i++) {
+        const puff = new THREE.Mesh(
+          new THREE.SphereGeometry(0.08, 8, 8),
+          new THREE.MeshBasicMaterial({ color: 0xfef3c7, transparent: true, opacity: 0.55 })
+        );
+        puff.position.set(7.2, 1.65 + i * 0.18, -6.35);
+        puff.userData.baseY = 1.65;
+        puff.userData.offset = i * 0.5;
+        scene.add(puff);
+        steamParticles.push(puff);
+      }
+
+      // Washroom Stalls (South-East corner of Office)
+      [3.1, 4.5].forEach((sz, idx) => {
+        const stallWall = new THREE.Mesh(
+          new THREE.BoxGeometry(1.7, 2.2, 1.15),
+          new THREE.MeshStandardMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.45 })
+        );
+        stallWall.position.set(8.6, 1.1, sz);
+        registerClickable(stallWall, 'station', 'washroom');
+        group.add(stallWall);
+
+        const doorPivot = new THREE.Group();
+        doorPivot.position.set(7.75, 1.05, sz - 0.5);
+        const doorMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.08, 2.0, 0.95),
+          new THREE.MeshStandardMaterial({ color: 0x0284c7 })
+        );
+        doorMesh.position.set(0, 0, 0.48);
+        doorPivot.add(doorMesh);
+        group.add(doorPivot);
+
+        const statusMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+        const statusLed = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.35), statusMat);
+        statusLed.position.set(7.72, 2.15, sz);
+        group.add(statusLed);
+
+        appState.washroomStalls[idx].doorPivot = doorPivot;
+        appState.washroomStalls[idx].statusMat = statusMat;
+      });
+
+      // Central AI Hologram Pedestal
+      const hubBase = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.15, 1.35, 0.4, 24),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.7 })
+      );
+      hubBase.position.set(0, 0.2, 3.8);
+      registerClickable(hubBase, 'station', 'hub');
+      group.add(hubBase);
+
+      scene.add(group);
+    }
+
+    function buildSuperiorMedClinic() {
+      const group = new THREE.Group();
+      group.position.set(18.6, 0, 2.2);
+
+      const floor = new THREE.Mesh(
+        new THREE.BoxGeometry(11.2, 0.2, 10.2),
+        new THREE.MeshStandardMaterial({ color: 0xf0fdfa, roughness: 0.25 })
+      );
+      floor.position.y = -0.08;
+      registerClickable(floor, 'station', 'superiormed');
+      group.add(floor);
+
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0x5eead4, transparent: true, opacity: 0.24, roughness: 0.1 });
+      const backWall = new THREE.Mesh(
+        new THREE.BoxGeometry(11.2, 4.1, 0.22),
+        new THREE.MeshStandardMaterial({ color: 0x115e59, roughness: 0.35 })
+      );
+      backWall.position.set(0, 2.05, -5.0);
+      registerClickable(backWall, 'station', 'superiormed');
+      group.add(backWall);
+
+      [-5.5, 5.5].forEach(wx => {
+        const side = new THREE.Mesh(new THREE.BoxGeometry(0.18, 4.0, 10.0), glassMat);
+        side.position.set(wx, 2.0, 0);
+        group.add(side);
+      });
+
+      const roof = new THREE.Mesh(
+        new THREE.BoxGeometry(11.6, 0.32, 10.6),
+        new THREE.MeshStandardMaterial({ color: 0x0f766e, transparent: true, opacity: 0.42 })
+      );
+      roof.position.y = 4.15;
+      group.add(roof);
+
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(10.6, 1.0, 0.24),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('SuperiorMed: Longevity Clinic Dubai', 'Personalized Care · Laila & Kath', '#042f2e', '#5eead4') })
+      );
+      sign.position.set(0, 4.8, 4.9);
+      registerClickable(sign, 'station', 'superiormed');
+      group.add(sign);
+
+      // Laila & Kath Desks
+      [-2.4, 0.8].forEach(dx => {
+        const desk = new THREE.Mesh(
+          new THREE.BoxGeometry(2.1, 0.84, 1.1),
+          new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25 })
+        );
+        desk.position.set(dx, 0.42, -0.8);
+        registerClickable(desk, 'station', 'superiormed');
+        group.add(desk);
+      });
+
+      // Longevity Bio-Vitality Pod
+      const podBase = new THREE.Mesh(
+        new THREE.CylinderGeometry(1.05, 1.2, 0.35, 24),
+        new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7 })
+      );
+      podBase.position.set(-1.0, 0.18, 1.8);
+      registerClickable(podBase, 'station', 'superiormed');
+      group.add(podBase);
+
+      clinicHoloRing = new THREE.Mesh(
+        new THREE.TorusGeometry(0.85, 0.04, 12, 36),
+        new THREE.MeshBasicMaterial({ color: 0x2dd4bf })
+      );
+      clinicHoloRing.rotation.x = Math.PI / 2;
+      clinicHoloRing.position.set(-1.0, 1.45, 1.8);
+      group.add(clinicHoloRing);
+
+      // SuperiorMed Kitchen & Coffee Bar (world x=21.8, z=-1.3)
+      const clinicCounter = new THREE.Mesh(
+        new THREE.BoxGeometry(2.6, 0.92, 1.05),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.22 })
+      );
+      clinicCounter.position.set(3.2, 0.46, -3.5);
+      registerClickable(clinicCounter, 'station', 'clinic_coffee');
+      group.add(clinicCounter);
+
+      const clinicEspresso = new THREE.Mesh(
+        new THREE.BoxGeometry(0.76, 0.62, 0.54),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.85 })
+      );
+      clinicEspresso.position.set(3.0, 1.26, -3.45);
+      registerClickable(clinicEspresso, 'station', 'clinic_coffee');
+      group.add(clinicEspresso);
+
+      scene.add(group);
+    }
+
+    function buildSuperiorMedAnnex() {
+      const group = new THREE.Group();
+      group.position.set(31.2, 0, 2.2);
+
+      // Clean Medical Floor
+      const floor = new THREE.Mesh(
+        new THREE.BoxGeometry(10.6, 0.2, 10.2),
+        new THREE.MeshStandardMaterial({ color: 0xecfeff, roughness: 0.25 })
+      );
+      floor.position.y = -0.08;
+      registerClickable(floor, 'station', 'clinic_annex');
+      group.add(floor);
+
+      // Glass Skybridge connecting Main SuperiorMed Clinic & Clinic Annex
+      const bridge = new THREE.Mesh(
+        new THREE.BoxGeometry(3.4, 0.16, 2.6),
+        new THREE.MeshStandardMaterial({ color: 0x99f6e4, roughness: 0.2 })
+      );
+      bridge.position.set(-6.8, -0.06, 0.5);
+      registerClickable(bridge, 'station', 'clinic_annex');
+      group.add(bridge);
+
+      const glassMat = new THREE.MeshStandardMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.24, roughness: 0.1 });
+      const backWall = new THREE.Mesh(
+        new THREE.BoxGeometry(10.6, 4.0, 0.22),
+        new THREE.MeshStandardMaterial({ color: 0x0e7490, roughness: 0.35 })
+      );
+      backWall.position.set(0, 2.0, -5.0);
+      registerClickable(backWall, 'station', 'clinic_annex');
+      group.add(backWall);
+
+      [-5.2, 5.2].forEach(wx => {
+        const side = new THREE.Mesh(new THREE.BoxGeometry(0.18, 3.9, 10.0), glassMat);
+        side.position.set(wx, 1.95, 0);
+        group.add(side);
+      });
+
+      const roof = new THREE.Mesh(
+        new THREE.BoxGeometry(11.0, 0.32, 10.6),
+        new THREE.MeshStandardMaterial({ color: 0x155e75, transparent: true, opacity: 0.42 })
+      );
+      roof.position.y = 4.05;
+      group.add(roof);
+
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(9.8, 0.95, 0.24),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('SuperiorMed Clinic Annex', 'Reception · Nursing Bay · Longevity Doctor', '#083344', '#67e8f9') })
+      );
+      sign.position.set(0, 4.65, 4.9);
+      registerClickable(sign, 'station', 'clinic_annex');
+      group.add(sign);
+
+      // Front Reception Desk (Amira)
+      const receptionDesk = new THREE.Mesh(
+        new THREE.BoxGeometry(2.8, 0.96, 1.0),
+        new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.22 })
+      );
+      receptionDesk.position.set(-2.2, 0.48, 2.6);
+      registerClickable(receptionDesk, 'station', 'clinic_annex');
+      group.add(receptionDesk);
+
+      const receptionTrim = new THREE.Mesh(
+        new THREE.BoxGeometry(2.86, 0.08, 1.06),
+        new THREE.MeshStandardMaterial({ color: 0x06b6d4, metalness: 0.6 })
+      );
+      receptionTrim.position.set(-2.2, 0.98, 2.6);
+      group.add(receptionTrim);
+
+      // Nurse Triage Examination Bed (Nurse Hannah)
+      const nurseBed = new THREE.Mesh(
+        new THREE.BoxGeometry(1.1, 0.55, 2.2),
+        new THREE.MeshStandardMaterial({ color: 0xcffafe, roughness: 0.4 })
+      );
+      nurseBed.position.set(-1.2, 0.32, -2.4);
+      registerClickable(nurseBed, 'station', 'clinic_annex');
+      group.add(nurseBed);
+
+      // Doctor Consultation Desk & Exam Bed (Dr. Faris)
+      const doctorDesk = new THREE.Mesh(
+        new THREE.BoxGeometry(2.3, 0.84, 1.1),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.25 })
+      );
+      doctorDesk.position.set(2.2, 0.42, -2.2);
+      registerClickable(doctorDesk, 'station', 'clinic_annex');
+      group.add(doctorDesk);
+
+      const doctorBed = new THREE.Mesh(
+        new THREE.BoxGeometry(1.1, 0.55, 2.2),
+        new THREE.MeshStandardMaterial({ color: 0xe0f2fe, roughness: 0.4 })
+      );
+      doctorBed.position.set(3.4, 0.32, 1.4);
+      registerClickable(doctorBed, 'station', 'clinic_annex');
+      group.add(doctorBed);
+
+      scene.add(group);
+    }
+
+    function buildBookstoreSupplies() {
+      const group = new THREE.Group();
+      group.position.set(-19.5, 0, 2.2);
+
+      const floor = new THREE.Mesh(
+        new THREE.BoxGeometry(8.5, 0.2, 8.5),
+        new THREE.MeshStandardMaterial({ color: 0x3b0764, roughness: 0.5 })
+      );
+      floor.position.y = -0.08;
+      registerClickable(floor, 'station', 'bookstore');
+      group.add(floor);
+
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(8.0, 0.9, 0.22),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('Al-Noor Bookstore & Supplies', 'Office & Clinic Stationery · Zayd', '#2e1065', '#c4b5fd') })
+      );
+      sign.position.set(0, 4.1, 4.1);
+      registerClickable(sign, 'station', 'bookstore');
+      group.add(sign);
+
+      [-2.6, 0, 2.6].forEach((bx, idx) => {
+        const shelf = new THREE.Mesh(
+          new THREE.BoxGeometry(1.6, 2.4, 0.65),
+          new THREE.MeshStandardMaterial({ color: idx === 1 ? 0x7c3aed : 0x6d28d9, roughness: 0.4 })
+        );
+        shelf.position.set(bx, 1.2, -2.6);
+        registerClickable(shelf, 'station', 'bookstore');
+        group.add(shelf);
+      });
+
+      scene.add(group);
+    }
+
+    function buildFreshMartSupermarket() {
+      const group = new THREE.Group();
+      group.position.set(-25.5, 0, 21.5);
+
+      const floor = new THREE.Mesh(
+        new THREE.BoxGeometry(10.5, 0.2, 9.5),
+        new THREE.MeshStandardMaterial({ color: 0x1a2e05, roughness: 0.45 })
+      );
+      floor.position.y = -0.08;
+      registerClickable(floor, 'station', 'supermarket');
+      group.add(floor);
+
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(9.8, 0.95, 0.24),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('FreshMart Supermarket & Grocery', 'Home Fridge Stocks & Bistro Supplies · Tariq', '#1a2e05', '#bef264') })
+      );
+      sign.position.set(0, 4.3, -4.5);
+      registerClickable(sign, 'station', 'supermarket');
+      group.add(sign);
+
+      [-3.0, 0, 3.0].forEach((ax, idx) => {
+        const aisle = new THREE.Mesh(
+          new THREE.BoxGeometry(1.6, 2.0, 3.8),
+          new THREE.MeshStandardMaterial({ color: [0x65a30d, 0xf97316, 0x0ea5e9][idx], roughness: 0.4 })
+        );
+        aisle.position.set(ax, 1.0, 1.2);
+        registerClickable(aisle, 'station', 'supermarket');
+        group.add(aisle);
+      });
+
+      scene.add(group);
+    }
+
+    function buildJewelleryStore() {
+      const group = new THREE.Group();
+      group.position.set(-12.5, 0, 21.5);
+
+      const floor = new THREE.Mesh(
+        new THREE.BoxGeometry(8.5, 0.2, 8.5),
+        new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.25, metalness: 0.3 })
+      );
+      floor.position.y = -0.08;
+      registerClickable(floor, 'station', 'jewellery');
+      group.add(floor);
+
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(8.0, 0.9, 0.22),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('AURELIA JEWELLERY BOUTIQUE', '24K Dubai Gold & Diamond Collection', '#1c1917', '#fde047') })
+      );
+      sign.position.set(0, 4.1, -4.1);
+      registerClickable(sign, 'station', 'jewellery');
+      group.add(sign);
+
+      [-1.8, 1.8].forEach(px => {
+        const ped = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.55, 0.65, 1.05, 18),
+          new THREE.MeshStandardMaterial({ color: 0x292524 })
+        );
+        ped.position.set(px, 0.52, 0.4);
+        registerClickable(ped, 'station', 'jewellery');
+        group.add(ped);
+
+        const ring = new THREE.Mesh(
+          new THREE.TorusGeometry(0.28, 0.06, 12, 24),
+          new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.95, roughness: 0.1, emissive: 0xca8a04, emissiveIntensity: 0.35 })
+        );
+        ring.position.set(px, 1.45, 0.4);
+        group.add(ring);
+        jewelRings.push(ring);
+      });
+
+      scene.add(group);
+    }
+
+    function buildLePetitBistro() {
+      const group = new THREE.Group();
+      group.position.set(14.5, 0, 21.5);
+
+      const patio = new THREE.Mesh(
+        new THREE.BoxGeometry(9.5, 0.18, 9.0),
+        new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.6 })
+      );
+      patio.position.y = -0.08;
+      registerClickable(patio, 'station', 'restaurant');
+      group.add(patio);
+
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(8.6, 0.9, 0.22),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('LE PETIT BISTRO RESTAURANT', 'Gourmet Dining & Team Breaks · Chef Mateo', '#431407', '#fdba74') })
+      );
+      sign.position.set(0, 4.1, -4.2);
+      registerClickable(sign, 'station', 'restaurant');
+      group.add(sign);
+
+      [-2.2, 2.2].forEach(tx => {
+        const table = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.85, 0.85, 0.08, 18),
+          new THREE.MeshStandardMaterial({ color: 0xfef3c7 })
+        );
+        table.position.set(tx, 0.78, 0.8);
+        registerClickable(table, 'station', 'restaurant');
+        group.add(table);
+
+        const umbrella = new THREE.Mesh(
+          new THREE.ConeGeometry(1.5, 0.7, 12),
+          new THREE.MeshStandardMaterial({ color: 0xea580c })
+        );
+        umbrella.position.set(tx, 2.35, 0.8);
+        group.add(umbrella);
+      });
+
+      scene.add(group);
+    }
+
+    function buildCityParkAndJoggingTrack() {
+      const lawn = new THREE.Mesh(
+        new THREE.BoxGeometry(15.0, 0.14, 11.0),
+        new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.85 })
+      );
+      lawn.position.set(1.0, -0.1, 22.0);
+      registerClickable(lawn, 'station', 'park');
+      scene.add(lawn);
+
+      const pts = [];
+      for (let i = 0; i < 24; i++) {
+        const a = (i / 24) * Math.PI * 2;
+        pts.push(new THREE.Vector3(1.0 + Math.cos(a) * 5.8, 0.02, 22.0 + Math.sin(a) * 3.8));
+      }
+      parkCurve = new THREE.CatmullRomCurve3(pts, true);
+
+      const trackGeo = new THREE.TubeGeometry(parkCurve, 64, 0.45, 8, true);
+      const trackMesh = new THREE.Mesh(
+        trackGeo,
+        new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.7 })
+      );
+      trackMesh.scale.y = 0.08;
+      registerClickable(trackMesh, 'station', 'park');
+      scene.add(trackMesh);
+    }
+
+    function buildCityTrees() {
+      const coords = [
+        [-31, 8.8], [-15, 8.8], [-5, 8.8], [6, 8.8], [13, 8.8], [25, 8.8], [38, 8.8],
+        [-31, 15.2], [-6, 15.2], [8, 15.2], [23, 15.2], [38, 15.2],
+        [-4, 20.5], [6, 23.5]
+      ];
+      coords.forEach(([tx, tz]) => {
+        const tree = new THREE.Group();
+        tree.position.set(tx, 0, tz);
+        const trunk = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.16, 0.22, 1.5, 8),
+          new THREE.MeshStandardMaterial({ color: 0x78350f })
+        );
+        trunk.position.y = 0.75;
+        tree.add(trunk);
+
+        const crown = new THREE.Mesh(
+          new THREE.DodecahedronGeometry(1.15, 1),
+          new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.75 })
+        );
+        crown.position.y = 2.15;
+        tree.add(crown);
+        scene.add(tree);
+      });
+    }
+
+    function buildHouseForEmployee(emp, houseIndex) {
+      const slotXCoords = [-34.0, -28.5, -23.0, -17.5, -12.0, -6.5, -1.0, 4.5, 10.0, 15.5, 21.0, 26.5, 32.0, 37.5, 43.0, 48.5];
+      const hx = slotXCoords[houseIndex % slotXCoords.length];
+      const hz = 35.6;
+      const porchPos = new THREE.Vector3(hx, 0, 32.2);
+
+      const group = new THREE.Group();
+      group.position.set(hx, 0, hz);
+
+      const interiorFloor = new THREE.Mesh(
+        new THREE.BoxGeometry(4.8, 0.08, 4.4),
+        new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.55 })
+      );
+      interiorFloor.position.y = 0.04;
+      registerClickable(interiorFloor, 'employee', emp.id);
+      group.add(interiorFloor);
+
+      // Cutaway Glass Walls so Bed, Home Kitchen, Food Crates, Sofa & TV are Visible
+      const glassWallMat = new THREE.MeshStandardMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.2, roughness: 0.1 });
+      const backWall = new THREE.Mesh(
+        new THREE.BoxGeometry(4.8, 2.6, 0.16),
+        new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.5 })
+      );
+      backWall.position.set(0, 1.3, 2.12);
+      group.add(backWall);
+
+      [-2.32, 2.32].forEach(wx => {
+        const side = new THREE.Mesh(new THREE.BoxGeometry(0.12, 2.55, 4.3), glassWallMat);
+        side.position.set(wx, 1.28, 0);
+        group.add(side);
+      });
+
+      const roof = new THREE.Mesh(
+        new THREE.ConeGeometry(3.75, 1.4, 4),
+        new THREE.MeshStandardMaterial({ color: new THREE.Color(emp.color), transparent: true, opacity: 0.34 })
+      );
+      roof.position.y = 3.35;
+      roof.rotation.y = Math.PI / 4;
+      registerClickable(roof, 'employee', emp.id);
+      group.add(roof);
+
+      // Bed
+      const bed = new THREE.Mesh(
+        new THREE.BoxGeometry(1.4, 0.45, 1.8),
+        new THREE.MeshStandardMaterial({ color: new THREE.Color(emp.color) })
+      );
+      bed.position.set(-1.35, 0.28, 1.05);
+      group.add(bed);
+
+      // Home Kitchen Counter & Fridge
+      const counter = new THREE.Mesh(
+        new THREE.BoxGeometry(1.65, 0.86, 0.72),
+        new THREE.MeshStandardMaterial({ color: 0xe2e8f0 })
+      );
+      counter.position.set(1.15, 0.47, 1.62);
+      group.add(counter);
+
+      const fridge = new THREE.Mesh(
+        new THREE.BoxGeometry(0.68, 1.68, 0.72),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.65 })
+      );
+      fridge.position.set(1.92, 0.88, 1.62);
+      group.add(fridge);
+
+      // Visible Home Food Stock Crates
+      const foodCrates = new THREE.Mesh(
+        new THREE.BoxGeometry(0.55, 0.32, 0.42),
+        new THREE.MeshStandardMaterial({ color: 0x84cc16 })
+      );
+      foodCrates.position.set(0.95, 1.06, 1.6);
+      group.add(foodCrates);
+
+      // Living Room Sofa & Smart TV
+      const sofa = new THREE.Mesh(
+        new THREE.BoxGeometry(1.55, 0.48, 0.76),
+        new THREE.MeshStandardMaterial({ color: 0x334155 })
+      );
+      sofa.position.set(-1.25, 0.28, -0.75);
+      group.add(sofa);
+
+      const tv = new THREE.Mesh(
+        new THREE.BoxGeometry(1.22, 0.72, 0.06),
+        new THREE.MeshStandardMaterial({ color: 0x020617, emissive: 0x38bdf8, emissiveIntensity: 0.65 })
+      );
+      tv.position.set(1.35, 0.88, -1.65);
+      tv.rotation.y = -0.35;
+      group.add(tv);
+
+      const sign = new THREE.Mesh(
+        new THREE.BoxGeometry(3.2, 0.46, 0.12),
+        new THREE.MeshBasicMaterial({ map: createSignTexture(`${emp.name}'s Home`, 'Bed · Kitchen · Sofa · TV', '#0f172a', emp.color) })
+      );
+      sign.position.set(0, 2.55, -2.15);
+      group.add(sign);
+
+      scene.add(group);
+      appState.houses[emp.id] = {
+        ownerId: emp.id,
+        pos: new THREE.Vector3(hx, 0, hz),
+        porchPos,
+        foodCrates,
+        interiorSpots: {
+          sofa: new THREE.Vector3(hx - 1.15, 0, hz - 0.55),
+          kitchen: new THREE.Vector3(hx + 1.15, 0, hz + 0.8)
+        }
+      };
+    }
+
+    function createEmployeeAvatarMesh(emp) {
+      const root = new THREE.Group();
+      const bodyGroup = new THREE.Group();
+      root.add(bodyGroup);
+
+      const suitMat = new THREE.MeshStandardMaterial({ color: new THREE.Color(emp.color), roughness: 0.42 });
+      const skinMat = new THREE.MeshStandardMaterial({ color: emp.skinColor || 0xf1c27d, roughness: 0.55 });
+      const hairMat = new THREE.MeshStandardMaterial({ color: emp.hairColor || 0x1e1b18, roughness: 0.7 });
+      const pantMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.65 });
+
+      const torsoW = emp.gender === 'female' ? 0.36 : 0.44;
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(torsoW, 0.62, 0.24), suitMat);
+      torso.position.y = 1.05;
+      torso.castShadow = true;
+      registerClickable(torso, 'employee', emp.id);
+      bodyGroup.add(torso);
+
+      const leftHip = new THREE.Group();
+      leftHip.position.set(-0.1, 0.74, 0);
+      const leftLeg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.68, 0.16), pantMat);
+      leftLeg.position.y = -0.34;
+      leftHip.add(leftLeg);
+      bodyGroup.add(leftHip);
+
+      const rightHip = new THREE.Group();
+      rightHip.position.set(0.1, 0.74, 0);
+      const rightLeg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.68, 0.16), pantMat);
+      rightLeg.position.y = -0.34;
+      rightHip.add(rightLeg);
+      bodyGroup.add(rightHip);
+
+      const leftShoulder = new THREE.Group();
+      leftShoulder.position.set(-(torsoW / 2 + 0.08), 1.32, 0);
+      const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.54, 0.14), suitMat);
+      leftArm.position.y = -0.25;
+      leftShoulder.add(leftArm);
+
+      const mobilePhone = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.15, 0.016),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, emissive: 0x38bdf8, emissiveIntensity: 0.95 })
+      );
+      mobilePhone.position.set(0, -0.52, 0.09);
+      mobilePhone.rotation.x = -0.45;
+      mobilePhone.visible = false;
+      leftShoulder.add(mobilePhone);
+      bodyGroup.add(leftShoulder);
+
+      const rightShoulder = new THREE.Group();
+      rightShoulder.position.set(torsoW / 2 + 0.08, 1.32, 0);
+      const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.54, 0.14), suitMat);
+      rightArm.position.y = -0.25;
+      rightShoulder.add(rightArm);
+
+      const coffeeMug = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.05, 0.12, 12),
+        new THREE.MeshStandardMaterial({ color: 0xffffff })
+      );
+      coffeeMug.position.set(0, -0.52, 0.08);
+      coffeeMug.visible = false;
+      rightShoulder.add(coffeeMug);
+
+      const groceryBag = new THREE.Mesh(
+        new THREE.BoxGeometry(0.24, 0.28, 0.16),
+        new THREE.MeshStandardMaterial({ color: 0x84cc16 })
+      );
+      groceryBag.position.set(0, -0.56, 0.04);
+      groceryBag.visible = false;
+      rightShoulder.add(groceryBag);
+      bodyGroup.add(rightShoulder);
+
+      // Head with Expressive Face Texture
+      const headGroup = new THREE.Group();
+      headGroup.position.y = 1.58;
+      const faceTex = createCharacterFaceTexture(emp.skinColor || 0xf1c27d, '#1e293b', emp.gender === 'female');
+      const faceMats = [
+        skinMat, skinMat, hairMat, skinMat,
+        new THREE.MeshStandardMaterial({ map: faceTex, roughness: 0.45 }),
+        hairMat
+      ];
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.34, 0.3), faceMats);
+      registerClickable(head, 'employee', emp.id);
+      headGroup.add(head);
+
+      const hairCap = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.11, 0.32), hairMat);
+      hairCap.position.y = 0.15;
+      headGroup.add(hairCap);
+
+      if (emp.gender === 'female') {
+        const ponytail = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), hairMat);
+        ponytail.position.set(0, 0.05, -0.18);
+        headGroup.add(ponytail);
+      }
+
+      bodyGroup.add(headGroup);
+      return { root, bodyGroup, leftHip, rightHip, leftShoulder, rightShoulder, headGroup, coffeeMug, mobilePhone, groceryBag };
+    }
+
+    function spawnEmployee(empData, walkFromDoor = true) {
+      const houseIndex = appState.employees.length;
+      const st = STATIONS[empData.station] || STATIONS.hub;
+      const slotIndex = appState.employees.filter(e => e.station === empData.station).length;
+      const standPos = (st.standSlots[slotIndex % st.standSlots.length] || st.pos).clone();
+
+      const emp = {
+        ...empData,
+        homeStation: empData.station,
+        currentPos: walkFromDoor ? new THREE.Vector3(0, 0, 8.4) : standPos.clone(),
+        waypoints: [],
+        walkPhase: Math.random() * 6,
+        isJogging: false,
+        jogAngle: Math.random() * Math.PI * 2,
+        holdingCoffee: false,
+        usingMobile: false,
+        carryingGrocery: false,
+        activeWashroomStall: -1,
+        meshParts: null
+      };
+
+      buildHouseForEmployee(emp, houseIndex);
+      const parts = createEmployeeAvatarMesh(emp);
+      parts.root.position.copy(emp.currentPos);
+      scene.add(parts.root);
+      emp.meshParts = parts;
+
+      if (walkFromDoor) emp.waypoints = [standPos];
+      appState.employees.push(emp);
+      createEmployeeNameplate(emp);
+      return emp;
+    }
+
+    function initInitialEmployees() {
+      const roster = [
+        { id: 'derick', name: 'Derick', role: 'Head of Digital Marketing (Partner of Laila)', gender: 'male', station: 'derick', color: '#f59e0b', skinColor: 0xe0ac69, hairColor: 0x1c1917, cash: 1850, bank: 42000, salary: 28000, energy: 95, comfort: 92, exhaustion: 8, foodStock: 90, statusText: 'Leading Marketing HQ', logs: ['Aligned P1-P3 campaigns with Maya & Abrar.'] },
+        { id: 'laila', name: 'Laila', role: 'Head of Accountant (SuperiorMed · Partner of Derick)', gender: 'female', station: 'superiormed', color: '#14b8a6', skinColor: 0xf1c27d, hairColor: 0x29150c, cash: 1650, bank: 39500, salary: 26000, energy: 94, comfort: 93, exhaustion: 7, foodStock: 90, statusText: 'Managing SuperiorMed Accounting', logs: ['Audited SuperiorMed Longevity Clinic Dubai accounts.'] },
+        { id: 'kath', name: 'Kath', role: 'Admin HR (SuperiorMed)', gender: 'female', station: 'superiormed', color: '#06b6d4', skinColor: 0xf1c27d, hairColor: 0x3b1d0e, cash: 1100, bank: 19200, salary: 15000, energy: 92, comfort: 90, exhaustion: 9, foodStock: 85, statusText: 'Managing SuperiorMed HR & Care', logs: ['Coordinated SuperiorMed Personalized Care schedules.'] },
+        { id: 'amira', name: 'Amira', role: 'Clinic Annex Receptionist', gender: 'female', station: 'clinic_annex', color: '#22d3ee', skinColor: 0xf1c27d, hairColor: 0x1e1b18, cash: 950, bank: 14500, salary: 11500, energy: 95, comfort: 93, exhaustion: 6, foodStock: 88, statusText: 'Welcoming Patients at Clinic Annex Reception', logs: ['Checked in VIP longevity guests at SuperiorMed Clinic Annex.'] },
+        { id: 'hannah', name: 'Nurse Hannah', role: 'Longevity Triage Nurse (Annex)', gender: 'female', station: 'clinic_annex', color: '#38bdf8', skinColor: 0xf1c27d, hairColor: 0x451a03, cash: 1200, bank: 21000, salary: 16500, energy: 94, comfort: 92, exhaustion: 8, foodStock: 86, statusText: 'Preparing IV Therapy & Vitals in Annex', logs: ['Recorded wellness vitals & longevity biomarkers in Clinic Annex.'] },
+        { id: 'faris', name: 'Dr. Faris', role: 'Chief Longevity Doctor (Annex)', gender: 'male', station: 'clinic_annex', color: '#e2e8f0', skinColor: 0xd99b66, hairColor: 0x1c1917, cash: 2400, bank: 58000, salary: 38000, energy: 96, comfort: 94, exhaustion: 5, foodStock: 92, statusText: 'Leading Personalized Care Consultations', logs: ['Reviewed personalized longevity protocols in SuperiorMed Clinic Annex.'] },
+        { id: 'maya', name: 'Maya', role: 'Blender 5.3 Image & Video Artist', gender: 'female', station: 'blender', color: '#f97316', skinColor: 0xf1c27d, hairColor: 0x1e1b18, cash: 1300, bank: 22400, salary: 17500, energy: 91, comfort: 89, exhaustion: 11, foodStock: 82, statusText: 'Editing 4K Reels in Blender 5.3', logs: ['Graded Aurelia Jewellery reel for Abrar.'] },
+        { id: 'abrar', name: 'Abrar', role: 'Social Media Manager (TikTok & Facebook)', gender: 'male', station: 'tiktok', color: '#ec4899', skinColor: 0xd99b66, hairColor: 0x1c1917, cash: 1250, bank: 20800, salary: 16500, energy: 90, comfort: 88, exhaustion: 12, foodStock: 80, statusText: 'Publishing TikTok & Facebook Reels', logs: ['Scheduled Aurelia Jewellery & SuperiorMed reels.'] },
+        { id: 'elena', name: 'Elena', role: 'Gmail Comms Specialist', gender: 'female', station: 'gmail', color: '#f43f5e', skinColor: 0xf1c27d, hairColor: 0x451a03, cash: 1050, bank: 17600, salary: 14000, energy: 92, comfort: 91, exhaustion: 9, foodStock: 84, statusText: 'Managing Inbox & VIP Inquiries', logs: ['Replied to Dubai longevity & jewellery inquiries.'] },
+        { id: 'marcus', name: 'Marcus', role: 'Google Drive Asset Archivist', gender: 'male', station: 'drive', color: '#10b981', skinColor: 0x8d5524, hairColor: 0x090d16, cash: 1100, bank: 18200, salary: 14500, energy: 93, comfort: 90, exhaustion: 10, foodStock: 85, statusText: 'Organizing Drive Media Vault', logs: ['Synced 4K raw footage to Maya Blender folder.'] },
+        { id: 'omar', name: 'Omar', role: 'Kitchen Maintenance & Refill Specialist', gender: 'male', station: 'coffee', color: '#eab308', skinColor: 0xd99b66, hairColor: 0x1c1917, cash: 900, bank: 13200, salary: 10500, energy: 96, comfort: 93, exhaustion: 7, foodStock: 89, statusText: 'Maintaining Office & Clinic Kitchens', logs: ['Refilled Office & SuperiorMed Clinic espresso bars.'] },
+        { id: 'nadia', name: 'Nadia', role: 'Cafeteria & Clinic Barista', gender: 'female', station: 'clinic_coffee', color: '#f472b6', skinColor: 0xf1c27d, hairColor: 0x29150c, cash: 880, bank: 12800, salary: 10200, energy: 94, comfort: 92, exhaustion: 8, foodStock: 87, statusText: 'Serving Longevity Coffee & Matcha', logs: ['Served fresh espresso to Laila, Kath & Annex staff.'] },
+        { id: 'mateo', name: 'Chef Mateo', role: 'Le Petit Bistro Chef', gender: 'male', station: 'restaurant', color: '#ea580c', skinColor: 0xe0ac69, hairColor: 0x1e1b18, cash: 1350, bank: 23000, salary: 18000, energy: 95, comfort: 94, exhaustion: 6, foodStock: 95, statusText: 'Serving Gourmet Meals at Bistro', logs: ['Prepared fresh lunches at Le Petit Bistro.'] },
+        { id: 'tariq', name: 'Tariq', role: 'FreshMart Supermarket Clerk', gender: 'male', station: 'supermarket', color: '#84cc16', skinColor: 0xd99b66, hairColor: 0x1c1917, cash: 850, bank: 12400, salary: 9800, energy: 95, comfort: 92, exhaustion: 7, foodStock: 100, statusText: 'Assisting Grocery & Food Stock Orders', logs: ['Restocked FreshMart produce & home pantry crates.'] },
+        { id: 'zayd', name: 'Zayd', role: 'Al-Noor Bookstore Clerk', gender: 'male', station: 'bookstore', color: '#8b5cf6', skinColor: 0xe0ac69, hairColor: 0x1c1917, cash: 870, bank: 12600, salary: 9800, energy: 94, comfort: 91, exhaustion: 8, foodStock: 88, statusText: 'Managing Office & Clinic Supplies', logs: ['Prepared stationery & clinic forms for Omar & Kath.'] }
+      ];
+      roster.forEach(r => spawnEmployee(r, false));
+    }
+
+    function buildPipoyDog() {
+      const root = new THREE.Group();
+      const furMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.75 });
+      const whiteMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.75 });
+      const collarMat = new THREE.MeshStandardMaterial({ color: 0x14b8a6, metalness: 0.4 });
+
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.24, 0.46), furMat);
+      torso.position.y = 0.26;
+      registerClickable(torso, 'pipoy', 'pipoy');
+      root.add(torso);
+
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.24, 0.26), furMat);
+      head.position.set(0, 0.42, 0.26);
+      registerClickable(head, 'pipoy', 'pipoy');
+      root.add(head);
+
+      const snout = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.12, 0.14), whiteMat);
+      snout.position.set(0, 0.38, 0.41);
+      root.add(snout);
+
+      const collar = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.025, 8, 16), collarMat);
+      collar.position.set(0, 0.35, 0.18);
+      collar.rotation.x = Math.PI / 3;
+      root.add(collar);
+
+      const tail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.18, 0.06), furMat);
+      tail.position.set(0, 0.36, -0.26);
+      tail.rotation.x = -0.5;
+      root.add(tail);
+
+      const legs = [];
+      [[-0.09, 0.16], [0.09, 0.16], [-0.09, -0.16], [0.09, -0.16]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.18, 0.07), whiteMat);
+        leg.position.set(lx, 0.09, lz);
+        root.add(leg);
+        legs.push(leg);
+      });
+
+      const startPos = new THREE.Vector3(-6.8, 0, -4.4);
+      root.position.copy(startPos);
+      scene.add(root);
+
+      appState.pipoy = {
+        name: 'Pipoy Fifth Cabrera',
+        ownerId: 'derick',
+        statusText: 'With Derick & Laila 🐶',
+        currentPos: startPos,
+        targetPos: startPos.clone(),
+        tail,
+        legs,
+        root
+      };
+
+      const layer = document.getElementById('employee-labels-layer');
+      const lbl = document.createElement('div');
+      lbl.id = 'pipoy-label';
+      lbl.className = 'emp-label glass px-2 py-0.5 rounded-full flex items-center gap-1 border-amber-400/80 shadow';
+      lbl.innerHTML = `<span class="text-[11px]">🐶</span><span class="text-[10px] font-extrabold text-amber-200">Pipoy Fifth Cabrera</span>`;
+      lbl.onclick = () => focusPipoy();
+      layer.appendChild(lbl);
+    }
+
+    function sendPipoyToOwner(ownerId, status = 'Following Partner 🐶') {
+      if (!appState.pipoy) return;
+      const owner = appState.employees.find(e => e.id === ownerId) || appState.employees[0];
+      appState.pipoy.ownerId = owner.id;
+      appState.pipoy.statusText = status;
+      appState.pipoy.targetPos = owner.currentPos.clone().add(new THREE.Vector3(0.75, 0, 0.55));
+    }
+
+    function focusPipoy() {
+      if (!appState.pipoy || !camera || !controls) return;
+      const p = appState.pipoy.currentPos;
+      controls.target.set(p.x, 0.5, p.z);
+      camera.position.set(p.x + 4.5, 4.2, p.z + 5.5);
+      controls.update();
+      appendChatMessage('agent', `🐶 <strong>Pipoy Fifth Cabrera</strong> (Derick &amp; Laila's beloved dog) is currently: <em>${appState.pipoy.statusText}</em>!`);
+    }
+
+    function initAutonomousNPCsAndVendors() {
+      // GTA-style Street Food Vendors with Detailed Human Cooks
+      const carts = [
+        { x: -6.5, z: 14.9, title: 'Dubai Shawarma Cart', color: 0xf97316, skin: 0xd99b66 },
+        { x: 9.5, z: 14.9, title: 'Karak Chai & Crepes', color: 0x14b8a6, skin: 0xe0ac69 }
+      ];
+      carts.forEach((c, idx) => {
+        const cart = new THREE.Mesh(
+          new THREE.BoxGeometry(1.9, 1.0, 0.95),
+          new THREE.MeshStandardMaterial({ color: c.color, roughness: 0.35 })
+        );
+        cart.position.set(c.x, 0.5, c.z);
+        scene.add(cart);
+
+        const canopy = new THREE.Mesh(
+          new THREE.BoxGeometry(2.15, 0.14, 1.2),
+          new THREE.MeshStandardMaterial({ color: 0xfef3c7 })
+        );
+        canopy.position.set(c.x, 2.2, c.z);
+        scene.add(canopy);
+
+        [[-0.9, -0.45], [0.9, -0.45], [-0.9, 0.45], [0.9, 0.45]].forEach(([px, pz]) => {
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.2, 6), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+          pole.position.set(c.x + px, 1.55, c.z + pz);
+          scene.add(pole);
+        });
+
+        // Human Vendor behind cart
+        const vendor = createEmployeeAvatarMesh({
+          id: `npc_vendor_${idx}`,
+          gender: idx === 1 ? 'female' : 'male',
+          color: idx === 0 ? '#ea580c' : '#0d9488',
+          skinColor: c.skin,
+          hairColor: 0x1c1917
+        });
+        vendor.root.position.set(c.x, 0, c.z + 0.72);
+        vendor.root.rotation.y = Math.PI;
+        scene.add(vendor.root);
+        appState.npcs.push({
+          parts: vendor,
+          activity: 'vendor',
+          baseX: c.x,
+          baseZ: c.z + 0.72,
+          phase: idx * 2.1
+        });
+      });
+
+      // City Park & Boulevard Benches for Relaxing NPCs
+      const benchSpots = [
+        { x: -3.2, z: 18.8, rotY: 0 },
+        { x: 5.2, z: 18.8, rotY: 0 },
+        { x: 1.0, z: 25.4, rotY: Math.PI }
+      ];
+      benchSpots.forEach(b => {
+        const seat = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.1, 0.55), new THREE.MeshStandardMaterial({ color: 0x92400e }));
+        seat.position.set(b.x, 0.45, b.z);
+        seat.rotation.y = b.rotY;
+        scene.add(seat);
+
+        const back = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.48, 0.08), new THREE.MeshStandardMaterial({ color: 0x78350f }));
+        back.position.set(b.x, 0.72, b.z + (b.rotY === 0 ? -0.24 : 0.24));
+        scene.add(back);
+      });
+
+      // Realistic Full-Body Human NPCs with Distinct GTA-Style Activities
+      const npcSpecs = [
+        // 1. Street Cleaners sweeping with brooms
+        { activity: 'cleaning', gender: 'male', color: '#eab308', skin: 0xd99b66, x: -16.0, z: 9.2, dir: 1, speed: 1.15, minX: -24, maxX: -8 },
+        { activity: 'cleaning', gender: 'male', color: '#84cc16', skin: 0x8d5524, x: 14.0, z: 14.8, dir: -1, speed: 1.1, minX: 6, maxX: 24 },
+        // 2. NPCs Eating Snacks near Street Food Carts
+        { activity: 'eating', gender: 'female', color: '#f43f5e', skin: 0xf1c27d, x: -5.1, z: 14.8, rotY: -1.1 },
+        { activity: 'eating', gender: 'male', color: '#3b82f6', skin: 0xe0ac69, x: 8.1, z: 14.8, rotY: 1.1 },
+        // 3. NPCs Walking & Calling on Mobile Phones
+        { activity: 'calling', gender: 'female', color: '#a855f7', skin: 0xf1c27d, x: -2.0, z: 9.1, dir: 1, speed: 1.65, minX: -28, maxX: 34 },
+        { activity: 'calling', gender: 'male', color: '#0284c7', skin: 0xd99b66, x: 22.0, z: 14.9, dir: -1, speed: 1.75, minX: -28, maxX: 36 },
+        // 4. NPCs Relaxing on Park Benches
+        { activity: 'relaxing', gender: 'male', color: '#059669', skin: 0xe0ac69, x: -3.2, z: 18.85, rotY: 0 },
+        { activity: 'relaxing', gender: 'female', color: '#f97316', skin: 0xf1c27d, x: 5.2, z: 18.85, rotY: 0 },
+        // 5. Casual Sidewalk Strollers
+        { activity: 'walking', gender: 'female', color: '#ec4899', skin: 0xf1c27d, x: -24.0, z: 14.9, dir: 1, speed: 1.55, minX: -34, maxX: 34 },
+        { activity: 'walking', gender: 'male', color: '#6366f1', skin: 0x8d5524, x: 28.0, z: 9.1, dir: -1, speed: 1.6, minX: -32, maxX: 38 }
+      ];
+
+      npcSpecs.forEach((spec, idx) => {
+        const parts = createEmployeeAvatarMesh({
+          id: `city_npc_${idx}`,
+          gender: spec.gender,
+          color: spec.color,
+          skinColor: spec.skin,
+          hairColor: idx % 2 === 0 ? 0x1c1917 : 0x451a03
+        });
+
+        let propMesh = null;
+        if (spec.activity === 'cleaning') {
+          // 3D Push Broom in Right Hand
+          const broomGroup = new THREE.Group();
+          const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 1.35, 8), new THREE.MeshStandardMaterial({ color: 0xd97706 }));
+          stick.position.y = -0.25;
+          const head = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.1, 0.14), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+          head.position.y = -0.92;
+          broomGroup.add(stick, head);
+          broomGroup.position.set(0, -0.45, 0.15);
+          broomGroup.rotation.x = 0.42;
+          parts.rightShoulder.add(broomGroup);
+          propMesh = broomGroup;
+        } else if (spec.activity === 'eating') {
+          // Shawarma / Burger Snack Prop in Right Hand
+          const snack = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.045, 0.18, 10), new THREE.MeshStandardMaterial({ color: 0xfef3c7 }));
+          snack.position.set(0, -0.52, 0.1);
+          parts.rightShoulder.add(snack);
+          propMesh = snack;
+        } else if (spec.activity === 'calling') {
+          // Glowing Smartphone Held to Ear
+          parts.mobilePhone.visible = true;
+          parts.mobilePhone.position.set(0.08, -0.48, 0.06);
+        } else if (spec.activity === 'relaxing') {
+          // Seated Pose on Bench
+          parts.bodyGroup.position.y = -0.32;
+          parts.leftHip.rotation.x = -1.35;
+          parts.rightHip.rotation.x = -1.35;
+          parts.root.rotation.y = spec.rotY || 0;
+        }
+
+        parts.root.position.set(spec.x, 0, spec.z);
+        if (spec.rotY !== undefined) parts.root.rotation.y = spec.rotY;
+        scene.add(parts.root);
+
+        appState.npcs.push({
+          parts,
+          propMesh,
+          activity: spec.activity,
+          dir: spec.dir || 1,
+          speed: spec.speed || 0,
+          minX: spec.minX || -35,
+          maxX: spec.maxX || 38,
+          phase: idx * 1.3
+        });
+      });
+
+      // GTA-Style Autonomous Driving Cars on the City Boulevard (z = 10.75 & z = 13.25)
+      const carConfigs = [
+        { x: -38, z: 13.25, dir: 1, speed: 8.5, color: 0xef4444, driverSkin: 0xd99b66 },
+        { x: 42, z: 10.75, dir: -1, speed: 9.2, color: 0x38bdf8, driverSkin: 0xf1c27d },
+        { x: -12, z: 13.25, dir: 1, speed: 7.4, color: 0xfacc15, driverSkin: 0x8d5524 },
+        { x: 18, z: 10.75, dir: -1, speed: 8.0, color: 0xf8fafc, driverSkin: 0xe0ac69 }
+      ];
+
+      carConfigs.forEach(cfg => {
+        const carGroup = new THREE.Group();
+        carGroup.position.set(cfg.x, 0, cfg.z);
+        carGroup.rotation.y = cfg.dir === 1 ? Math.PI / 2 : -Math.PI / 2;
+
+        // Car Chassis & Cabin
+        const chassis = new THREE.Mesh(
+          new THREE.BoxGeometry(1.75, 0.56, 3.6),
+          new THREE.MeshStandardMaterial({ color: cfg.color, metalness: 0.65, roughness: 0.22 })
+        );
+        chassis.position.y = 0.45;
+        chassis.castShadow = true;
+        carGroup.add(chassis);
+
+        const cabin = new THREE.Mesh(
+          new THREE.BoxGeometry(1.48, 0.52, 1.9),
+          new THREE.MeshStandardMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.55, roughness: 0.1 })
+        );
+        cabin.position.set(0, 0.96, -0.15);
+        carGroup.add(cabin);
+
+        // Visible Human NPC Driver inside Cabin
+        const driverHead = new THREE.Mesh(
+          new THREE.SphereGeometry(0.16, 12, 12),
+          new THREE.MeshStandardMaterial({ color: cfg.driverSkin })
+        );
+        driverHead.position.set(-0.32, 0.96, 0.15);
+        carGroup.add(driverHead);
+
+        // Headlights & Taillights
+        [-0.58, 0.58].forEach(lx => {
+          const headLight = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.14, 0.08), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
+          headLight.position.set(lx, 0.48, 1.81);
+          carGroup.add(headLight);
+
+          const tailLight = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.14, 0.08), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+          tailLight.position.set(lx, 0.48, -1.81);
+          carGroup.add(tailLight);
+        });
+
+        // 4 Wheels
+        const wheels = [];
+        [[-0.88, 1.15], [0.88, 1.15], [-0.88, -1.15], [0.88, -1.15]].forEach(([wx, wz]) => {
+          const wheel = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.32, 0.32, 0.22, 14),
+            new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 })
+          );
+          wheel.rotation.z = Math.PI / 2;
+          wheel.position.set(wx, 0.24, wz);
+          carGroup.add(wheel);
+          wheels.push(wheel);
+        });
+
+        scene.add(carGroup);
+        appState.npcCars.push({ group: carGroup, wheels, dir: cfg.dir, speed: cfg.speed, minX: -54, maxX: 62 });
+      });
+    }
+
+    function initFlyingBirds() {
+      for (let i = 0; i < 7; i++) {
+        const bird = new THREE.Group();
+        const wingMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc, side: THREE.DoubleSide });
+        const leftWing = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.18), wingMat);
+        leftWing.position.x = -0.28;
+        const rightWing = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.18), wingMat);
+        rightWing.position.x = 0.28;
+        bird.add(leftWing, rightWing);
+        bird.position.set(-10 + i * 4, 13 + (i % 3) * 2, 5 + i * 2);
+        scene.add(bird);
+        appState.birds.push({ group: bird, leftWing, rightWing, angle: i * 0.9, radius: 14 + (i % 4) * 4, height: 12 + (i % 3) * 2.5 });
+      }
+    }
+
+    function initWeatherParticles() {
+      const count = 900;
+      const geo = new THREE.BufferGeometry();
+      const positions = new Float32Array(count * 3);
+      for (let i = 0; i < count; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 90;
+        positions[i * 3 + 1] = Math.random() * 28;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 80 + 12;
+      }
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const mat = new THREE.PointsMaterial({ color: 0xbae6fd, size: 0.18, transparent: true, opacity: 0.75 });
+      appState.rainSystem = new THREE.Points(geo, mat);
+      appState.rainSystem.visible = false;
+      scene.add(appState.rainSystem);
+    }
+
+    function cycleTimeOfDay() {
+      const order = ['morning', 'afternoon', 'sunset', 'night'];
+      appState.timeMode = order[(order.indexOf(appState.timeMode) + 1) % order.length];
+      applyTimeAndWeatherVisuals();
+    }
+
+    function cycleWeather() {
+      const order = ['clear', 'rain', 'sandstorm'];
+      appState.weatherMode = order[(order.indexOf(appState.weatherMode) + 1) % order.length];
+      applyTimeAndWeatherVisuals();
+    }
+
+    function applyTimeAndWeatherVisuals() {
+      const timeBtn = document.getElementById('time-mode-btn');
+      const weatherBtn = document.getElementById('weather-mode-btn');
+
+      const skyMap = {
+        morning: { bg: 0x0284c7, sun: 1.35, amb: 0.5, label: '☀️ Morning' },
+        afternoon: { bg: 0x0ea5e9, sun: 1.55, amb: 0.58, label: '🌤️ Afternoon' },
+        sunset: { bg: 0x9a3412, sun: 1.15, amb: 0.42, label: '🌇 Sunset' },
+        night: { bg: 0x020617, sun: 0.35, amb: 0.28, label: '🌙 Night' }
+      };
+      const tCfg = skyMap[appState.timeMode] || skyMap.morning;
+      if (timeBtn) timeBtn.textContent = tCfg.label;
+
+      let skyHex = tCfg.bg;
+      let fogDensity = 0.0055;
+      if (appState.weatherMode === 'rain') {
+        skyHex = 0x1e293b;
+        fogDensity = 0.011;
+        if (weatherBtn) weatherBtn.textContent = '🌧️ Rain';
+        if (appState.rainSystem) {
+          appState.rainSystem.visible = true;
+          appState.rainSystem.material.color.setHex(0xbae6fd);
+        }
+      } else if (appState.weatherMode === 'sandstorm') {
+        skyHex = 0x92400e;
+        fogDensity = 0.015;
+        if (weatherBtn) weatherBtn.textContent = '🌪️ Sandstorm';
+        if (appState.rainSystem) {
+          appState.rainSystem.visible = true;
+          appState.rainSystem.material.color.setHex(0xfde68a);
+        }
+      } else {
+        if (weatherBtn) weatherBtn.textContent = '🌤️ Clear';
+        if (appState.rainSystem) appState.rainSystem.visible = false;
+      }
+
+      if (scene) {
+        scene.background.setHex(skyHex);
+        scene.fog.color.setHex(skyHex);
+        scene.fog.density = fogDensity;
+      }
+      if (sunLight) sunLight.intensity = tCfg.sun;
+      if (ambientLight) ambientLight.intensity = tCfg.amb;
+    }
+
+    function createEmployeeNameplate(emp) {
+      const layer = document.getElementById('employee-labels-layer');
+      const el = document.createElement('div');
+      el.id = `emp-label-${emp.id}`;
+      el.className = 'emp-label glass px-2 py-0.5 rounded-full flex items-center gap-1 shadow';
+      el.style.borderColor = emp.color;
+      el.innerHTML = `<span class="w-2 h-2 rounded-full" style="background:${emp.color}"></span><span class="text-[10px] font-bold text-white">${emp.name}</span>`;
+      el.onclick = () => selectEmployee(emp.id);
+      layer.appendChild(el);
+    }
+
+    function renderTeamRosterBar() {
+      const bar = document.getElementById('team-roster-bar');
+      if (!bar) return;
+      bar.innerHTML = appState.employees.map(emp => `
+        <button onclick="selectEmployee('${emp.id}')" class="px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 shrink-0 border transition ${appState.selectedEmployeeId === emp.id ? 'bg-slate-800 border-cyan-400 text-white' : 'bg-slate-900/70 border-slate-700/80 text-slate-300 hover:text-white'}">
+          <span class="w-2 h-2 rounded-full" style="background:${emp.color}"></span>
+          <span>${emp.name}</span>
+        </button>
+      `).join('');
+    }
+
+    function releaseWashroomStall(emp) {
+      if (emp.activeWashroomStall >= 0 && appState.washroomStalls[emp.activeWashroomStall]) {
+        const stall = appState.washroomStalls[emp.activeWashroomStall];
+        stall.occupiedBy = null;
+        if (stall.doorPivot) stall.doorPivot.rotation.y = 0;
+        if (stall.statusMat) stall.statusMat.color.setHex(0x22c55e);
+        emp.activeWashroomStall = -1;
+      }
+    }
+
+    function navigateEmployeeTo(empId, stationKey, statusText = null, opts = {}) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      releaseWashroomStall(emp);
+      emp.isJogging = Boolean(opts.jogging);
+      if (!opts.keepMobile) {
+        emp.usingMobile = false;
+        if (emp.meshParts?.mobilePhone) emp.meshParts.mobilePhone.visible = false;
+      }
+
+      const st = STATIONS[stationKey] || STATIONS.hub;
+      let destPos;
+      if (stationKey === 'houses' && appState.houses[emp.id]) {
+        destPos = appState.houses[emp.id].interiorSpots.sofa.clone();
+      } else {
+        const peers = appState.employees.filter(e => e.station === stationKey && e.id !== emp.id).length;
+        destPos = (st.standSlots[peers % st.standSlots.length] || st.pos).clone();
+      }
+
+      const waypoints = [];
+      const fromExterior = emp.currentPos.z > 9.1 || emp.currentPos.x > 11.2 || emp.currentPos.x < -11.2;
+      const toExterior = Boolean(st.isExterior);
+
+      if (!fromExterior && toExterior) {
+        waypoints.push(new THREE.Vector3(0, 0, 5.2));
+        waypoints.push(new THREE.Vector3(0, 0, 9.8));
+        if (st.corridorEntry) waypoints.push(st.corridorEntry.clone());
+      } else if (fromExterior && !toExterior) {
+        waypoints.push(new THREE.Vector3(0, 0, 10.2));
+        waypoints.push(new THREE.Vector3(0, 0, 5.2));
+      } else if (fromExterior && toExterior && st.corridorEntry) {
+        waypoints.push(new THREE.Vector3(emp.currentPos.x, 0, 13.8));
+        waypoints.push(new THREE.Vector3(st.corridorEntry.x, 0, 13.8));
+      }
+
+      waypoints.push(destPos);
+      emp.waypoints = waypoints;
+      emp.station = stationKey;
+      if (opts.updateHome !== false && !['coffee', 'clinic_coffee', 'washroom', 'restaurant', 'park', 'houses', 'supermarket', 'bookstore', 'jewellery', 'atm', 'burj_khalifa'].includes(stationKey)) {
+        emp.homeStation = stationKey;
+      }
+
+      if (statusText) {
+        emp.statusText = statusText;
+        emp.logs.unshift(`${formatSimClock(appState.simMinutes)}: ${statusText}`);
+        emp.logs = emp.logs.slice(0, 7);
+      }
+
+      if (emp.id === 'derick' || emp.id === 'laila') {
+        sendPipoyToOwner(emp.id, `Following ${emp.name} 🐶`);
+      }
+      if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+    }
+
+    function spendEmployeeMoney(emp, amount, reason, recipientEmpId = null) {
+      if (!emp) return true;
+      if ((emp.cash || 0) < amount) {
+        if ((emp.bank || 0) >= amount) {
+          emp.bank -= amount;
+          emp.cash = (emp.cash || 0) + amount;
+          emp.logs.unshift(`${formatSimClock(appState.simMinutes)}: Auto-card tap AED ${amount} (${reason})`);
+        } else {
+          sendEmployeeToATM(emp.id);
+          return false;
+        }
+      }
+      emp.cash = Math.max(0, (emp.cash || 0) - amount);
+      emp.logs.unshift(`${formatSimClock(appState.simMinutes)}: Paid AED ${amount} · ${reason}`);
+      emp.logs = emp.logs.slice(0, 8);
+      if (recipientEmpId) {
+        const rec = appState.employees.find(e => e.id === recipientEmpId);
+        if (rec) rec.bank = (rec.bank || 0) + amount;
+      }
+      if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+      return true;
+    }
+
+    function sendEmployeeToATM(empId) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      navigateEmployeeTo(emp.id, 'atm', 'Walking to Dubai Bank ATM 🏧', { updateHome: false });
+      setTimeout(() => {
+        const withdrawAmt = Math.min(1500, emp.bank || 0);
+        if (withdrawAmt > 0) {
+          emp.bank -= withdrawAmt;
+          emp.cash = (emp.cash || 0) + withdrawAmt;
+          emp.statusText = `Withdrew AED ${withdrawAmt} at ATM 💵`;
+          emp.logs.unshift(`${formatSimClock(appState.simMinutes)}: ATM Withdrawal +AED ${withdrawAmt}`);
+        } else {
+          emp.bank = 5000;
+          emp.cash += 1500;
+          emp.statusText = 'Salary Advance +AED 1,500 at ATM 💵';
+        }
+        if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+      }, 2200);
+    }
+
+    function processMonthlyPayday() {
+      appState.employees.forEach(emp => {
+        const pay = emp.salary || 14000;
+        emp.bank = (emp.bank || 0) + pay;
+        emp.cash = (emp.cash || 0) + 500;
+        emp.logs.unshift(`${formatSimClock(appState.simMinutes)}: 💰 Monthly Salary Credited +AED ${pay.toLocaleString()}`);
+        emp.logs = emp.logs.slice(0, 8);
+      });
+      if (appState.selectedEmployeeId) selectEmployee(appState.selectedEmployeeId);
+      appendChatMessage('agent', '💰 <strong>Monthly Dubai Payroll Completed!</strong> Every employee received their monthly salary in their Bank Account plus <strong>AED 500</strong> pocket allowance.');
+    }
+
+    function sendEmployeeToBurjKhalifaDate(empId, partnerId = null) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      const chosenPartnerId = partnerId || (emp.id === 'derick' ? 'laila' : (emp.id === 'laila' ? 'derick' : 'maya'));
+      const partner = appState.employees.find(e => e.id === chosenPartnerId && e.id !== emp.id);
+
+      spendEmployeeMoney(emp, 250, 'Burj Khalifa Sky View & Romantic Date 🗼');
+      navigateEmployeeTo(emp.id, 'burj_khalifa', partner ? `Dating ${partner.name} at Burj Khalifa 🗼❤️` : 'Enjoying Burj Khalifa Sky View 🗼', { updateHome: false });
+      if (partner) {
+        navigateEmployeeTo(partner.id, 'burj_khalifa', `Romantic Date with ${emp.name} at Burj Khalifa 🗼❤️`, { updateHome: false });
+      }
+      if (emp.id === 'derick' || emp.id === 'laila' || chosenPartnerId === 'derick' || chosenPartnerId === 'laila') {
+        sendPipoyToOwner('derick', 'Enjoying Burj Khalifa Fountain View with Derick & Laila 🐶🗼');
+      }
+
+      setTimeout(() => {
+        emp.exhaustion = 0;
+        emp.energy = 100;
+        emp.comfort = 100;
+        if (partner) {
+          partner.exhaustion = 0;
+          partner.energy = 100;
+          partner.comfort = 100;
+        }
+        if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+      }, 2800);
+    }
+
+    function sendEmployeeForCoffee(empId, useClinic = false) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      const clinicMode = useClinic || ['laila', 'kath', 'amira', 'hannah', 'faris'].includes(emp.id) || emp.station === 'superiormed' || emp.station === 'clinic_annex';
+      const stKey = clinicMode ? 'clinic_coffee' : 'coffee';
+      spendEmployeeMoney(emp, clinicMode ? 30 : 25, clinicMode ? 'SuperiorMed Longevity Coffee ☕' : 'Office Espresso ☕', 'nadia');
+      navigateEmployeeTo(emp.id, stKey, clinicMode ? 'Getting SuperiorMed Clinic Coffee ☕' : 'Getting Office Espresso ☕', { updateHome: false });
+      navigateEmployeeTo('nadia', stKey, `Serving Coffee to ${emp.name} ☕`, { updateHome: false });
+
+      setTimeout(() => {
+        const k = clinicMode ? appState.kitchens.clinic : appState.kitchens.office;
+        k.level = Math.max(15, k.level - 12);
+        updateKitchenLabels();
+        emp.holdingCoffee = true;
+        if (emp.meshParts?.coffeeMug) emp.meshParts.coffeeMug.visible = true;
+        emp.energy = Math.min(100, emp.energy + 30);
+        emp.exhaustion = Math.max(0, emp.exhaustion - 15);
+        emp.statusText = 'Enjoying Fresh Espresso ☕';
+        if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+      }, 2200);
+    }
+
+    function triggerKitchenRefillMaintenance(target = 'all') {
+      const omar = appState.employees.find(e => e.id === 'omar');
+      if (!omar) return;
+      const stKey = target === 'clinic' ? 'clinic_coffee' : 'coffee';
+      navigateEmployeeTo('omar', stKey, 'Refilling & Maintaining Kitchens 🔧', { updateHome: false });
+      setTimeout(() => {
+        appState.kitchens.office.level = 100;
+        appState.kitchens.clinic.level = 100;
+        updateKitchenLabels();
+        omar.statusText = 'Both Kitchens Refilled to 100% ✅';
+        if (appState.selectedEmployeeId === 'omar') selectEmployee('omar');
+      }, 2200);
+    }
+
+    function updateKitchenLabels() {
+      const offEl = document.getElementById('label-coffee-text');
+      if (offEl) offEl.textContent = `Office Kitchen · ${Math.round(appState.kitchens.office.level)}%`;
+      const cliEl = document.getElementById('label-clinic_coffee-text');
+      if (cliEl) cliEl.textContent = `Clinic Kitchen · ${Math.round(appState.kitchens.clinic.level)}%`;
+    }
+
+    function sendEmployeeToWashroom(empId) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      const stallIdx = appState.washroomStalls.findIndex(s => !s.occupiedBy);
+      navigateEmployeeTo(emp.id, 'washroom', 'Using Office Washroom 🚻', { updateHome: false });
+      if (stallIdx >= 0) {
+        const stall = appState.washroomStalls[stallIdx];
+        stall.occupiedBy = emp.id;
+        emp.activeWashroomStall = stallIdx;
+        if (stall.doorPivot) stall.doorPivot.rotation.y = 1.15;
+        if (stall.statusMat) stall.statusMat.color.setHex(0xef4444);
+      }
+      setTimeout(() => {
+        releaseWashroomStall(emp);
+        emp.comfort = 100;
+        emp.statusText = 'Washroom Break Complete ✨';
+        if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+      }, 2600);
+    }
+
+    function sendEmployeeToRestaurant(empId) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      if (emp.id !== 'mateo') spendEmployeeMoney(emp, 120, 'Le Petit Bistro Gourmet Meal 🍽️', 'mateo');
+      navigateEmployeeTo(emp.id, 'restaurant', 'Dining at Le Petit Bistro 🍽️', { updateHome: false });
+      if (emp.id !== 'mateo') navigateEmployeeTo('mateo', 'restaurant', `Serving Gourmet Meal to ${emp.name} 👨‍🍳`);
+      setTimeout(() => {
+        emp.energy = 100;
+        emp.exhaustion = Math.max(0, emp.exhaustion - 45);
+        emp.statusText = 'Refreshed after Bistro Meal 🍽️';
+        if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+      }, 2800);
+    }
+
+    function sendEmployeeToGrocery(empId) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      if (emp.id !== 'tariq') spendEmployeeMoney(emp, 280, 'FreshMart Home Fridge Food Stocks 🛒', 'tariq');
+      navigateEmployeeTo(emp.id, 'supermarket', 'Buying Home Food Stocks at FreshMart 🛒', { updateHome: false });
+      navigateEmployeeTo('tariq', 'supermarket', `Assisting ${emp.name} with Food Stocks 🛒`);
+      setTimeout(() => {
+        emp.carryingGrocery = true;
+        if (emp.meshParts?.groceryBag) emp.meshParts.groceryBag.visible = true;
+        emp.foodStock = 100;
+        if (appState.houses[emp.id]?.foodCrates) appState.houses[emp.id].foodCrates.scale.set(1.2, 1.3, 1.2);
+        emp.statusText = 'Home Fridge Food Stocks 100% 🛒';
+        if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+      }, 2600);
+    }
+
+    function sendEmployeeToBookstore(empId) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      if (emp.id !== 'zayd') spendEmployeeMoney(emp, 95, 'Al-Noor Bookstore & Stationery 📚', 'zayd');
+      navigateEmployeeTo(emp.id, 'bookstore', 'Buying Office & Clinic Supplies 📚', { updateHome: false });
+      navigateEmployeeTo('zayd', 'bookstore', `Preparing Supplies for ${emp.name} 📚`);
+      setTimeout(() => {
+        emp.statusText = 'Restocked Stationery & Supplies 📚';
+        if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+      }, 2400);
+    }
+
+    function sendEmployeeJogging(empId) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      navigateEmployeeTo(emp.id, 'park', 'Jogging on City Park Track 🏃', { updateHome: false, jogging: true });
+      setTimeout(() => {
+        emp.exhaustion = Math.max(0, emp.exhaustion - 35);
+        emp.energy = Math.min(100, emp.energy + 20);
+        if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+      }, 2500);
+    }
+
+    function useMobilePhone(empId) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      emp.usingMobile = true;
+      if (emp.meshParts?.mobilePhone) emp.meshParts.mobilePhone.visible = true;
+      emp.statusText = 'Using Smartphone / Mobile 📱';
+      if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+    }
+
+    function sendEmployeeHome(empId) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      navigateEmployeeTo(emp.id, 'houses', 'Walking Home to Relax (Sofa, TV & Mobile) 🏠', { updateHome: false });
+      setTimeout(() => {
+        emp.energy = 100;
+        emp.comfort = 100;
+        emp.exhaustion = 0;
+        emp.carryingGrocery = false;
+        if (emp.meshParts?.groceryBag) emp.meshParts.groceryBag.visible = false;
+        useMobilePhone(emp.id);
+        emp.statusText = 'At Home · Sofa, Smart TV & Mobile 📱🏠';
+        if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+      }, 3200);
+    }
+
+    function triggerGroupCommute(dir) {
+      if (dir === 'to_home') {
+        appState.employees.forEach(emp => sendEmployeeHome(emp.id));
+      } else {
+        appState.employees.forEach(emp => {
+          const dest = (emp.id === 'laila' || emp.id === 'kath') ? 'superiormed'
+            : (['amira', 'hannah', 'faris'].includes(emp.id) ? 'clinic_annex' : emp.homeStation);
+          navigateEmployeeTo(emp.id, dest, `Working at ${STATIONS[dest]?.name || 'Desk'}`);
+        });
+      }
+      setCameraPreset(dir === 'to_home' ? 'houses' : 'overview');
+    }
+
+    function spawnHandoffBeam(fromEmpId, toEmpId, colorHex = 0x38bdf8) {
+      const a = appState.employees.find(e => e.id === fromEmpId);
+      const b = appState.employees.find(e => e.id === toEmpId);
+      if (!a || !b) return;
+      const pts = [a.currentPos.clone().add(new THREE.Vector3(0, 1.5, 0)), b.currentPos.clone().add(new THREE.Vector3(0, 1.5, 0))];
+      const geo = new THREE.BufferGeometry().setFromPoints(pts);
+      const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: colorHex }));
+      scene.add(line);
+      appState.handoffBeams.push({ line, ttl: 2.4 });
+    }
+
+    function selectEmployee(empId) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      appState.selectedEmployeeId = emp.id;
+      renderTeamRosterBar();
+
+      const badge = document.getElementById('emp-avatar-badge');
+      badge.style.background = emp.color;
+      badge.textContent = emp.name[0];
+      document.getElementById('emp-name').textContent = emp.name;
+      document.getElementById('emp-role').textContent = emp.role;
+      document.getElementById('emp-cash').textContent = `AED ${(emp.cash || 0).toLocaleString()}`;
+      document.getElementById('emp-bank').textContent = `AED ${(emp.bank || 0).toLocaleString()}`;
+      document.getElementById('emp-salary').textContent = `AED ${(emp.salary || 14000).toLocaleString()}/mo`;
+      document.getElementById('emp-energy').textContent = `${Math.round(emp.energy)}%`;
+      document.getElementById('emp-comfort').textContent = `${Math.round(emp.comfort)}%`;
+      document.getElementById('emp-exhaust').textContent = `${Math.round(emp.exhaustion)}%`;
+      document.getElementById('emp-food').textContent = `${Math.round(emp.foodStock || 85)}%`;
+      document.getElementById('emp-status').textContent = emp.statusText;
+
+      const partnerBanner = document.getElementById('emp-partner-banner');
+      if (emp.id === 'derick' || emp.id === 'laila') {
+        partnerBanner.classList.remove('hidden');
+        partnerBanner.innerHTML = `❤️ <strong>Partners:</strong> Derick &amp; Laila · Beloved Pet: <strong>🐶 Pipoy Fifth Cabrera</strong>`;
+      } else {
+        partnerBanner.classList.add('hidden');
+      }
+
+      document.getElementById('emp-atm-btn').onclick = () => { sendEmployeeToATM(emp.id); setCameraPreset('atm'); };
+      document.getElementById('emp-coffee-btn').onclick = () => sendEmployeeForCoffee(emp.id, false);
+      document.getElementById('emp-clinic-coffee-btn').onclick = () => sendEmployeeForCoffee(emp.id, true);
+      document.getElementById('emp-toilet-btn').onclick = () => sendEmployeeToWashroom(emp.id);
+      document.getElementById('emp-bistro-btn').onclick = () => sendEmployeeToRestaurant(emp.id);
+      document.getElementById('emp-grocery-btn').onclick = () => sendEmployeeToGrocery(emp.id);
+      document.getElementById('emp-books-btn').onclick = () => sendEmployeeToBookstore(emp.id);
+      document.getElementById('emp-burj-btn').onclick = () => {
+        sendEmployeeToBurjKhalifaDate(emp.id);
+        setCameraPreset('burj_khalifa');
+      };
+      document.getElementById('emp-jog-btn').onclick = () => sendEmployeeJogging(emp.id);
+      document.getElementById('emp-mobile-btn').onclick = () => { useMobilePhone(emp.id); openMobilePhoneModal('texting'); };
+      document.getElementById('emp-home-btn').onclick = () => { sendEmployeeHome(emp.id); setCameraPreset('houses'); };
+      document.getElementById('emp-work-btn').onclick = () => {
+        const dest = (emp.id === 'laila' || emp.id === 'kath') ? 'superiormed'
+          : (['amira', 'hannah', 'faris'].includes(emp.id) ? 'clinic_annex' : emp.homeStation);
+        navigateEmployeeTo(emp.id, dest, `Working at ${STATIONS[dest]?.name || 'Desk'}`);
+      };
+
+      const roleTasks = {
+        derick: [{ label: '🏥 Visit Partner Laila & Kath at SuperiorMed Clinic', fn: `sendQuickPrompt('Derick and Pipoy Fifth Cabrera visit Laila and Kath at SuperiorMed Longevity Clinic Dubai')` }],
+        laila: [{ label: '☕ Grab Coffee in SuperiorMed Clinic Kitchen', fn: `sendEmployeeForCoffee('laila', true)` }],
+        kath: [{ label: '☕ Grab Coffee in SuperiorMed Clinic Kitchen', fn: `sendEmployeeForCoffee('kath', true)` }],
+        amira: [{ label: '🩺 Check In Guest at SuperiorMed Clinic Annex Reception', fn: `sendQuickPrompt('Check in at SuperiorMed Clinic Annex with Receptionist Amira, Nurse Hannah and Dr. Faris')` }],
+        hannah: [{ label: '💉 Run Longevity Vitals & IV Checkup in Clinic Annex', fn: `navigateEmployeeTo('hannah', 'clinic_annex', 'Running Vitals & Longevity Biomarkers 💉'); setCameraPreset('clinic_annex');` }],
+        faris: [{ label: '🩺 Conduct Personalized Longevity Consultation in Annex', fn: `navigateEmployeeTo('faris', 'clinic_annex', 'Consulting Patient in Clinic Annex 🩺'); setCameraPreset('clinic_annex');` }],
+        maya: [{ label: '🎨 Open Blender 5.3 Studio & Render for Abrar', fn: `openBlenderStudio()` }],
+        abrar: [{ label: '🚀 Publish Maya\'s Render to TikTok & Facebook', fn: `openBlenderStudio()` }],
+        omar: [{ label: '🔧 Refill & Maintain Office & SuperiorMed Kitchens', fn: `triggerKitchenRefillMaintenance('all')` }],
+        tariq: [{ label: '🛒 Restock FreshMart Food Aisles', fn: `sendQuickPrompt('Send team to FreshMart Supermarket to buy home food stocks')` }],
+        zayd: [{ label: '📚 Prepare Office & Clinic Stationery Order', fn: `sendEmployeeToBookstore('omar')` }]
+      };
+      const tasks = roleTasks[emp.id] || [{ label: `💼 Focus at ${STATIONS[emp.homeStation]?.name || 'Station'}`, fn: `navigateEmployeeTo('${emp.id}', '${emp.homeStation}', 'Focused Work Sprint')` }];
+      document.getElementById('emp-role-tasks').innerHTML = tasks.map(t => `
+        <button onclick="${t.fn}" class="w-full text-left px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600/80 text-[10px] font-semibold text-cyan-200">${t.label}</button>
+      `).join('');
+
+      document.getElementById('emp-logs').innerHTML = emp.logs.map(l => `<div class="px-2 py-1 rounded bg-slate-900/70 border border-slate-800">${l}</div>`).join('');
+    }
+
+    function focusSelectedEmployee() {
+      const emp = appState.employees.find(e => e.id === appState.selectedEmployeeId);
+      if (!emp || !camera || !controls) return;
+      controls.target.set(emp.currentPos.x, 1.1, emp.currentPos.z);
+      camera.position.set(emp.currentPos.x + 5.5, 5.2, emp.currentPos.z + 6.5);
+      controls.update();
+    }
+
+    function setCameraPreset(preset) {
+      if (!camera || !controls) return;
+      const views = {
+        overview: { pos: [0, 15.5, 23.5], target: [0, 1.2, 1.5] },
+        city: { pos: [4, 48, 66], target: [4, 1, 20] },
+        marina: { pos: [-26, 15, 25], target: [-48, 1.5, 14] },
+        downtown_plaza: { pos: [34, 15, 26], target: [52, 1.5, 16] },
+        burj_khalifa: { pos: [36.0, 17.5, 8.5], target: [36.0, 7.5, 22.5] },
+        atm: { pos: [-12.2, 6.5, 15.5], target: [-12.2, 1.2, 9.2] },
+        jumeirah_beach: { pos: [6, 14, 34], target: [6, 0.8, 51] },
+        superiormed: { pos: [18.6, 11.5, 16.5], target: [18.6, 1.4, 2.2] },
+        clinic_annex: { pos: [31.2, 11.5, 16.5], target: [31.2, 1.4, 2.2] },
+        supermarket: { pos: [-25.5, 10.5, 8.5], target: [-25.5, 1.2, 21.5] },
+        bookstore: { pos: [-19.5, 10.5, 14.5], target: [-19.5, 1.2, 2.2] },
+        jewellery: { pos: [-12.5, 10.5, 9.5], target: [-12.5, 1.2, 21.5] },
+        restaurant: { pos: [14.5, 10.5, 9.5], target: [14.5, 1.2, 21.5] },
+        park: { pos: [1.0, 12.5, 10.0], target: [1.0, 0.5, 22.0] },
+        houses: { pos: [2.0, 13.5, 22.0], target: [2.0, 1.2, 35.6] }
+      };
+      const v = views[preset] || views.overview;
+      camera.position.set(...v.pos);
+      controls.target.set(...v.target);
+      controls.update();
+    }
+
+    function openStationPanel(stationKey) {
+      const title = document.getElementById('station-title');
+      const sub = document.getElementById('station-sub');
+      const body = document.getElementById('station-body');
+
+      if (stationKey === 'superiormed' || stationKey === 'clinic_coffee') {
+        title.textContent = 'SuperiorMed: Longevity Clinic Dubai';
+        sub.textContent = 'Personalized Care · Laila, Kath & Clinic Coffee Bar';
+        body.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-teal-500/15 border border-teal-400/35 text-teal-100">
+            <strong>Laila</strong> (Head of Accountant &amp; Derick's Partner) &amp; <strong>Kath</strong> (Admin HR) run Personalized Care. Connected via skybridge to the <strong>SuperiorMed Clinic Annex</strong>.
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="sendEmployeeForCoffee('laila', true); sendEmployeeForCoffee('kath', true);" class="py-1.5 px-2 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-200 font-bold text-[10px]">☕ Clinic Coffee</button>
+            <button onclick="openStationPanel('clinic_annex'); setCameraPreset('clinic_annex');" class="py-1.5 px-2 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-200 font-bold text-[10px]">🩺 Open Annex</button>
+          </div>
+        `;
+        return;
+      }
+
+      if (stationKey === 'clinic_annex') {
+        title.textContent = 'SuperiorMed Clinic Annex';
+        sub.textContent = 'Receptionist Amira · Nurse Hannah · Dr. Faris';
+        body.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-400/35 text-cyan-100">
+            • <strong>Amira</strong> — Clinic Annex Receptionist &amp; Guest Check-In<br/>
+            • <strong>Nurse Hannah</strong> — Longevity Triage, Vitals &amp; IV Wellness<br/>
+            • <strong>Dr. Faris</strong> — Chief Longevity Doctor &amp; Personalized Care
+          </div>
+          <button onclick="sendQuickPrompt('Check in at SuperiorMed Clinic Annex with Receptionist Amira, Nurse Hannah and Dr. Faris')" class="w-full py-2 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-[11px]">🩺 Send Selected Staff for Longevity Checkup</button>
+        `;
+        return;
+      }
+
+      if (stationKey === 'supermarket') {
+        title.textContent = 'FreshMart Supermarket & Grocery';
+        sub.textContent = 'Operated by Tariq · Home Fridge Food Stocks';
+        body.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-lime-500/15 border border-lime-400/35 text-lime-100">
+            <strong>Tariq</strong> helps employees stock up on fresh groceries for their home fridges and supplies <strong>Chef Mateo</strong> at Le Petit Bistro.
+          </div>
+          <button onclick="sendEmployeeToGrocery(appState.selectedEmployeeId)" class="w-full py-2 rounded-xl bg-lime-400 text-slate-950 font-extrabold text-[11px]">🛒 Send Selected Employee to Buy Food Stocks</button>
+        `;
+        return;
+      }
+
+      if (stationKey === 'bookstore') {
+        title.textContent = 'Al-Noor Bookstore & Office Supplies';
+        sub.textContent = 'Operated by Zayd · Office & Clinic Stationery';
+        body.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-violet-500/15 border border-violet-400/35 text-violet-100">
+            <strong>Zayd</strong> supplies paper, toner, medical intake folders, and books to the AI 3D Office &amp; SuperiorMed Clinic (AED 95).
+          </div>
+          <button onclick="sendEmployeeToBookstore(appState.selectedEmployeeId)" class="w-full py-2 rounded-xl bg-violet-400 text-slate-950 font-extrabold text-[11px]">📚 Buy Office &amp; Clinic Supplies (AED 95)</button>
+        `;
+        return;
+      }
+
+      if (stationKey === 'atm') {
+        title.textContent = 'Dubai Bank 24/7 ATM Machine';
+        sub.textContent = 'Instant AED Cash Withdrawal & Salary Access';
+        body.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-400/35 text-emerald-100">
+            Withdraw <strong>AED 1,500</strong> cash from your salary bank balance so your team can pay for coffee, Bistro lunches, FreshMart groceries, and Burj Khalifa dates!
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="sendEmployeeToATM(appState.selectedEmployeeId)" class="py-2 rounded-xl bg-emerald-400 text-slate-950 font-extrabold text-[10px]">🏧 Withdraw AED 1,500</button>
+            <button onclick="processMonthlyPayday()" class="py-2 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-[10px]">💰 Run Team Payday</button>
+          </div>
+        `;
+        return;
+      }
+
+      if (stationKey === 'burj_khalifa') {
+        title.textContent = 'Burj Khalifa · Sky View & Dating';
+        sub.textContent = 'At The Top Observation Deck & Fountain Promenade';
+        body.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-yellow-500/15 border border-yellow-300/40 text-yellow-100">
+            Relax with panoramic Dubai views or take a romantic date by the illuminated fountain arch (AED 250).
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="sendEmployeeToBurjKhalifaDate('derick', 'laila')" class="py-2 rounded-xl bg-gradient-to-r from-amber-400 to-pink-400 text-slate-950 font-extrabold text-[10px]">❤️ Derick &amp; Laila Date</button>
+            <button onclick="sendEmployeeToBurjKhalifaDate(appState.selectedEmployeeId)" class="py-2 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-[10px]">🗼 Visit Sky View</button>
+          </div>
+        `;
+        return;
+      }
+
+      if (stationKey === 'blender') {
+        openBlenderStudio();
+        return;
+      }
+
+      const st = STATIONS[stationKey] || STATIONS.derick;
+      title.textContent = st.name;
+      sub.textContent = 'Interactive 3D Station';
+      body.innerHTML = `
+        <button onclick="navigateEmployeeTo(appState.selectedEmployeeId, '${stationKey}', 'Assigned to ${st.name}')" class="w-full py-2 rounded-xl bg-cyan-400 text-slate-950 font-extrabold text-[11px]">
+          🚶 Move Selected Employee Here
+        </button>
+      `;
+    }
+
+    function openHireModal() { document.getElementById('hire-modal').classList.remove('hidden'); }
+    function closeHireModal() { document.getElementById('hire-modal').classList.add('hidden'); }
+    function confirmHireEmployee() {
+      const name = document.getElementById('hire-name').value.trim() || 'Sora';
+      const role = document.getElementById('hire-role').value.trim() || 'Specialist';
+      const station = document.getElementById('hire-station').value;
+      const gender = document.getElementById('hire-gender').value;
+      const palette = ['#38bdf8', '#a855f7', '#f43f5e', '#10b981', '#eab308'];
+      const color = palette[appState.employees.length % palette.length];
+      const newEmp = spawnEmployee({
+        id: 'emp_' + Date.now(),
+        name,
+        role,
+        gender,
+        station,
+        color,
+        skinColor: 0xf1c27d,
+        hairColor: 0x1e1b18,
+        cash: 1200,
+        bank: 16000,
+        salary: 14000,
+        energy: 98,
+        comfort: 96,
+        exhaustion: 4,
+        foodStock: 95,
+        statusText: `Newly Hired at ${STATIONS[station]?.name || 'Office'}`,
+        logs: [`Joined the team with a dedicated see-through residential house!`]
+      }, true);
+      closeHireModal();
+      selectEmployee(newEmp.id);
+      appendChatMessage('agent', `🎉 Hired <strong>${name}</strong> (${role}) and built <strong>${name}'s See-Through House</strong>!`);
+    }
+
+    function openBlenderStudio() {
+      document.getElementById('blender-modal').classList.remove('hidden');
+      renderBlenderPreview();
+    }
+    function closeBlenderStudio() { document.getElementById('blender-modal').classList.add('hidden'); }
+    function renderBlenderPreview() {
+      const c = document.getElementById('blender-canvas');
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const preset = document.getElementById('blender-preset')?.value || 'luxury_gold';
+      const title = document.getElementById('blender-title')?.value || 'AURELIA GOLD · DUBAI';
+      const bright = document.getElementById('blender-bright')?.value || 105;
+      const bVal = document.getElementById('blender-bright-val');
+      if (bVal) bVal.textContent = `${bright}%`;
+
+      ctx.save();
+      ctx.filter = `brightness(${bright}%)`;
+      const grad = ctx.createLinearGradient(0, 0, 640, 360);
+      if (preset === 'clinic_teal') {
+        grad.addColorStop(0, '#042f2e'); grad.addColorStop(1, '#0d9488');
+      } else if (preset === 'cyber_neon') {
+        grad.addColorStop(0, '#311042'); grad.addColorStop(1, '#ec4899');
+      } else if (preset === 'noir') {
+        grad.addColorStop(0, '#09090b'); grad.addColorStop(1, '#3f3f46');
+      } else {
+        grad.addColorStop(0, '#1c1917'); grad.addColorStop(1, '#b45309');
+      }
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 640, 360);
+
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.arc(320, 175, 74, 0, Math.PI * 2); ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 30px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(title, 320, 295);
+      ctx.font = '600 14px Inter, sans-serif';
+      ctx.fillStyle = '#fde047';
+      ctx.fillText('BLENDER 5.3 COMPOSITOR · GRADED BY MAYA FOR ABRAR', 320, 325);
+      ctx.restore();
+    }
+
+    function exportBlenderToAbrar(platform) {
+      const title = document.getElementById('blender-title')?.value || 'Dubai Luxury Reel';
+      closeBlenderStudio();
+      spawnHandoffBeam('maya', 'abrar', 0xf97316);
+      navigateEmployeeTo('abrar', platform === 'TikTok' ? 'tiktok' : 'facebook', `Preparing ${platform} Post from Maya's Render`);
+      appState.pendingApproval = { platform, title };
+      document.getElementById('approval-summary').innerHTML = `
+        <strong>Platform:</strong> ${platform}<br/>
+        <strong>Creative Render:</strong> "${title}" (Graded in Blender 5.3 by Maya)<br/>
+        <strong>Assigned Publisher:</strong> Abrar (Social Media Manager)<br/>
+        <strong>Approved By:</strong> Derick (Head of Digital Marketing)
+      `;
+      document.getElementById('approval-modal').classList.remove('hidden');
+    }
+    function closeApprovalModal() { document.getElementById('approval-modal').classList.add('hidden'); }
+    function approveSocialAction() {
+      const info = appState.pendingApproval || { platform: 'TikTok', title: 'Dubai Reel' };
+      closeApprovalModal();
+      appendChatMessage('agent', `✅ Approved &amp; Published! <strong>Abrar</strong> published <strong>Maya's</strong> Blender 5.3 render (<em>"${info.title}"</em>) to <strong>${info.platform}</strong>!`);
+    }
+
+    function openMobilePhoneModal(tab = 'texting') {
+      const emp = appState.employees.find(e => e.id === appState.selectedEmployeeId) || appState.employees[0];
+      if (!emp) return;
+      useMobilePhone(emp.id);
+      document.getElementById('phone-owner-title').textContent = `${emp.name}'s Smartphone`;
+      document.getElementById('phone-wallet-sub').textContent = `Wallet: AED ${(emp.cash || 0).toLocaleString()} · Bank: AED ${(emp.bank || 0).toLocaleString()}`;
+
+      const recSelect = document.getElementById('sms-recipient-select');
+      recSelect.innerHTML = appState.employees
+        .filter(e => e.id !== emp.id)
+        .map(e => `<option value="${e.name}" ${emp.id === 'derick' && e.id === 'laila' ? 'selected' : ''}>${e.name} (${e.role.split('(')[0].trim()})</option>`)
+        .join('');
+
+      document.getElementById('mobile-phone-modal').classList.remove('hidden');
+      switchPhoneApp(tab);
+    }
+
+    function closeMobilePhoneModal() {
+      document.getElementById('mobile-phone-modal').classList.add('hidden');
+    }
+
+    function switchPhoneApp(appKey) {
+      appState.activePhoneApp = appKey;
+      ['texting', 'fakebook', 'intagram'].forEach(k => {
+        const panel = document.getElementById(`phone-app-${k}`);
+        const btn = document.getElementById(`tab-btn-${k}`);
+        if (panel) panel.classList.toggle('hidden', k !== appKey);
+        if (btn) {
+          btn.className = k === appKey
+            ? 'py-1.5 rounded-lg bg-cyan-400 text-slate-950 font-extrabold'
+            : 'py-1.5 rounded-lg text-slate-300 hover:text-white';
+        }
+      });
+      renderPhoneFeeds();
+    }
+
+    function renderPhoneFeeds() {
+      const emp = appState.employees.find(e => e.id === appState.selectedEmployeeId) || appState.employees[0];
+      const smsBox = document.getElementById('sms-thread-box');
+      if (smsBox && emp) {
+        smsBox.innerHTML = appState.smsMessages.map(m => {
+          const isMe = m.from === emp.name;
+          return `
+            <div class="p-2 rounded-xl ${isMe ? 'bg-cyan-500/20 border border-cyan-400/40 self-end text-right' : 'bg-slate-900 border border-slate-700 self-start'} max-w-[88%]">
+              <div class="text-[9px] font-bold ${isMe ? 'text-cyan-300' : 'text-amber-300'}">${m.from} → ${m.to} · ${m.time}</div>
+              <div class="text-white mt-0.5">${m.text}</div>
+            </div>
+          `;
+        }).join('');
+        smsBox.scrollTop = smsBox.scrollHeight;
+      }
+
+      const fbBox = document.getElementById('fakebook-feed-box');
+      if (fbBox) {
+        fbBox.innerHTML = appState.fakebookPosts.map((p, i) => `
+          <div class="p-2.5 rounded-xl bg-slate-900/95 border border-slate-700/80 flex flex-col gap-1">
+            <div class="flex items-center justify-between">
+              <span class="font-extrabold text-white" style="color:${p.color}">${p.author}</span>
+              <span class="text-[9px] text-slate-400">${p.time}</span>
+            </div>
+            <div class="text-[9px] text-slate-400">${p.role}</div>
+            <div class="text-slate-100 leading-snug">${p.text}</div>
+            <button onclick="likeSocialPost('fb', ${i})" class="self-start mt-1 px-2 py-0.5 rounded bg-blue-500/20 border border-blue-400/40 text-blue-200 text-[10px] font-bold">👍 Like (${p.likes})</button>
+          </div>
+        `).join('');
+      }
+
+      const igBox = document.getElementById('intagram-feed-box');
+      if (igBox) {
+        igBox.innerHTML = appState.intagramPosts.map((p, i) => `
+          <div class="rounded-xl bg-slate-900/95 border border-slate-700/80 overflow-hidden flex flex-col">
+            <div class="px-2.5 py-1.5 flex items-center justify-between">
+              <span class="font-extrabold text-xs" style="color:${p.color}">${p.author}</span>
+              <span class="text-[9px] text-slate-300">${p.location}</span>
+            </div>
+            <div class="h-24 bg-gradient-to-br ${p.gradient} flex items-center justify-center text-3xl shadow-inner">
+              ${p.emoji}
+            </div>
+            <div class="p-2 flex flex-col gap-1">
+              <div class="text-slate-100"><strong class="text-white">${p.author}</strong> ${p.caption}</div>
+              <button onclick="likeSocialPost('ig', ${i})" class="self-start px-2 py-0.5 rounded bg-pink-500/20 border border-pink-400/40 text-pink-200 text-[10px] font-bold">❤️ ${p.likes} Likes</button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function sendEmployeeTextMessage(e) {
+      e.preventDefault();
+      const emp = appState.employees.find(x => x.id === appState.selectedEmployeeId) || appState.employees[0];
+      const toName = document.getElementById('sms-recipient-select')?.value || 'Laila';
+      const input = document.getElementById('sms-input');
+      const txt = input?.value.trim();
+      if (!txt || !emp) return;
+
+      appState.smsMessages.push({
+        from: emp.name,
+        to: toName,
+        text: txt,
+        time: formatSimClock(appState.simMinutes)
+      });
+      input.value = '';
+      useMobilePhone(emp.id);
+      const targetEmp = appState.employees.find(x => x.name === toName);
+      if (targetEmp) useMobilePhone(targetEmp.id);
+      renderPhoneFeeds();
+    }
+
+    function createFakebookPost() {
+      const emp = appState.employees.find(x => x.id === appState.selectedEmployeeId) || appState.employees[0];
+      const input = document.getElementById('fb-post-input');
+      const txt = input?.value.trim();
+      if (!txt || !emp) return;
+
+      appState.fakebookPosts.unshift({
+        id: 'fb_' + Date.now(),
+        author: emp.name,
+        color: emp.color,
+        role: emp.role,
+        text: txt,
+        time: 'Just now',
+        likes: 1
+      });
+      input.value = '';
+      renderPhoneFeeds();
+      appendChatMessage('agent', `📘 <strong>${emp.name}</strong> posted on <strong>Fakebook</strong>: <em>"${txt}"</em>`);
+    }
+
+    function createIntagramPost() {
+      const emp = appState.employees.find(x => x.id === appState.selectedEmployeeId) || appState.employees[0];
+      const sceneLoc = document.getElementById('ig-scene-select')?.value || '🗼 Burj Khalifa Sky Lounge';
+      const caption = document.getElementById('ig-caption-input')?.value.trim() || 'Dubai moments ✨';
+      if (!emp) return;
+
+      const styles = {
+        '🗼 Burj Khalifa Sky Lounge': { grad: 'from-amber-500 via-pink-500 to-indigo-700', emoji: '🗼✨' },
+        '🏥 SuperiorMed Longevity Dubai': { grad: 'from-teal-400 via-cyan-600 to-slate-900', emoji: '🏥💚' },
+        '💎 Aurelia 24K Gold Shoot': { grad: 'from-yellow-400 via-amber-600 to-stone-900', emoji: '💎👑' },
+        '🛥️ Dubai Marina Sunset Yacht': { grad: 'from-sky-400 via-blue-600 to-indigo-950', emoji: '🛥️🌅' },
+        '🏖️ Jumeirah Beach Cabana': { grad: 'from-cyan-300 via-teal-500 to-amber-500', emoji: '🏖️🌴' }
+      };
+      const st = styles[sceneLoc] || styles['🗼 Burj Khalifa Sky Lounge'];
+
+      appState.intagramPosts.unshift({
+        id: 'ig_' + Date.now(),
+        author: emp.name,
+        color: emp.color,
+        location: sceneLoc,
+        gradient: st.grad,
+        emoji: st.emoji,
+        caption,
+        likes: 1
+      });
+      renderPhoneFeeds();
+      appendChatMessage('agent', `📸 <strong>${emp.name}</strong> shared a new photo on <strong>Intagram</strong> from <em>${sceneLoc}</em>!`);
+    }
+
+    function likeSocialPost(network, idx) {
+      if (network === 'fb' && appState.fakebookPosts[idx]) appState.fakebookPosts[idx].likes += 1;
+      if (network === 'ig' && appState.intagramPosts[idx]) appState.intagramPosts[idx].likes += 1;
+      renderPhoneFeeds();
+    }
+
+    function appendChatMessage(sender, htmlText) {
+      const box = document.getElementById('chat-messages');
+      if (!box) return;
+      const div = document.createElement('div');
+      div.className = sender === 'user'
+        ? 'p-2.5 rounded-xl bg-cyan-500/20 border border-cyan-400/40 text-cyan-50 self-end max-w-[92%]'
+        : 'p-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-200 leading-relaxed max-w-[95%]';
+      div.innerHTML = htmlText;
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function sendQuickPrompt(text) {
+      document.getElementById('chat-input').value = text;
+      handleChatText(text);
+    }
+
+    function handleChatText(raw) {
+      const text = raw.trim();
+      if (!text) return;
+      appendChatMessage('user', text);
+      document.getElementById('chat-input').value = '';
+      const lower = text.toLowerCase();
+
+      if (lower.includes('annex') || lower.includes('doctor') || lower.includes('nurse') || lower.includes('reception') || lower.includes('faris') || lower.includes('hannah') || lower.includes('amira') || lower.includes('checkup')) {
+        setCameraPreset('clinic_annex');
+        const visitorId = ['amira', 'hannah', 'faris'].includes(appState.selectedEmployeeId) ? 'derick' : (appState.selectedEmployeeId || 'derick');
+        navigateEmployeeTo(visitorId, 'clinic_annex', 'Checking in at SuperiorMed Clinic Annex 🩺', { updateHome: false });
+        navigateEmployeeTo('amira', 'clinic_annex', `Checking in ${visitorId.toUpperCase()} at Reception 📋`);
+        navigateEmployeeTo('hannah', 'clinic_annex', `Preparing Vitals & IV Checkup 💉`);
+        navigateEmployeeTo('faris', 'clinic_annex', `Consulting ${visitorId.toUpperCase()} in Annex 🩺`);
+        appendChatMessage('agent', '🩺 <strong>SuperiorMed Clinic Annex:</strong> <strong>Receptionist Amira</strong> checked in the visit, while <strong>Nurse Hannah</strong> and <strong>Dr. Faris</strong> are conducting a Personalized Longevity Care consultation!');
+        return;
+      }
+
+      if (lower.includes('superiormed') || lower.includes('laila') || lower.includes('kath') || lower.includes('pipoy')) {
+        setCameraPreset('superiormed');
+        navigateEmployeeTo('derick', 'superiormed', 'Visiting Partner Laila & Kath at SuperiorMed 🏥', { updateHome: false });
+        sendPipoyToOwner('derick', 'With Derick & Laila at SuperiorMed 🐶');
+        appendChatMessage('agent', '🏥 <strong>Derick</strong> &amp; <strong>🐶 Pipoy Fifth Cabrera</strong> walked to <strong>SuperiorMed: Longevity Clinic Dubai</strong> to visit <strong>Laila</strong> and <strong>Kath</strong>!');
+        return;
+      }
+
+      if (lower.includes('grocery') || lower.includes('supermarket') || lower.includes('freshmart') || lower.includes('food stock')) {
+        setCameraPreset('supermarket');
+        ['derick', 'laila', 'maya', 'abrar'].forEach(id => sendEmployeeToGrocery(id));
+        appendChatMessage('agent', '🛒 <strong>FreshMart Supermarket:</strong> <strong>Tariq</strong> is assisting the team with buying <strong>Home Fridge Food Stocks</strong>!');
+        return;
+      }
+
+      if (lower.includes('book') || lower.includes('supply') || lower.includes('stationery')) {
+        setCameraPreset('bookstore');
+        sendEmployeeToBookstore('omar');
+        appendChatMessage('agent', '📚 <strong>Al-Noor Bookstore:</strong> <strong>Omar</strong> is picking up stationery &amp; clinic supplies assisted by <strong>Zayd</strong>!');
+        return;
+      }
+
+      if (lower.includes('jewel') || lower.includes('blender') || lower.includes('maya') || lower.includes('abrar') || lower.includes('tiktok')) {
+        setCameraPreset('jewellery');
+        navigateEmployeeTo('derick', 'jewellery', 'Sourcing 24K Gold Collection 💎', { updateHome: false });
+        navigateEmployeeTo('maya', 'blender', 'Grading Jewellery Reel in Blender 5.3 🎨');
+        spawnHandoffBeam('maya', 'abrar', 0xf97316);
+        appendChatMessage('agent', '💎🎨 <strong>Derick</strong> &amp; <strong>Maya</strong> sourced the Aurelia Jewellery collection and queued the Blender 5.3 render for <strong>Abrar</strong>!');
+        return;
+      }
+
+      if (lower.includes('home') || lower.includes('house')) {
+        triggerGroupCommute('to_home');
+        appendChatMessage('agent', '🏠 Everyone walked home to relax on their visible <strong>Sofa, Bed, Home Kitchen, Smart TV &amp; Mobile 📱</strong>!');
+        return;
+      }
+
+      if (lower.includes('burj') || lower.includes('date') || lower.includes('dating')) {
+        setCameraPreset('burj_khalifa');
+        sendEmployeeToBurjKhalifaDate('derick', 'laila');
+        appendChatMessage('agent', '🗼❤️ <strong>Derick &amp; Laila</strong> (with <strong>🐶 Pipoy Fifth Cabrera</strong>) are enjoying a romantic sky-view date at <strong>Burj Khalifa</strong>!');
+        return;
+      }
+
+      if (lower.includes('atm') || lower.includes('withdraw') || lower.includes('money') || lower.includes('cash')) {
+        setCameraPreset('atm');
+        sendEmployeeToATM(appState.selectedEmployeeId || 'derick');
+        appendChatMessage('agent', '🏧 Heading to the <strong>Dubai Bank ATM</strong> to withdraw <strong>AED 1,500</strong> cash!');
+        return;
+      }
+
+      if (lower.includes('payday') || lower.includes('salary')) {
+        processMonthlyPayday();
+        return;
+      }
+
+      if (lower.includes('fakebook') || lower.includes('intagram') || lower.includes('instagram') || lower.includes('text') || lower.includes('sms')) {
+        const tab = lower.includes('intagram') || lower.includes('instagram') ? 'intagram' : (lower.includes('fakebook') ? 'fakebook' : 'texting');
+        openMobilePhoneModal(tab);
+        appendChatMessage('agent', `📱 Opened <strong>${tab.toUpperCase()}</strong> on your employee smartphone!`);
+        return;
+      }
+
+      if (lower.includes('marina') || lower.includes('downtown') || lower.includes('beach') || lower.includes('jumeirah')) {
+        const dest = lower.includes('marina') ? 'marina' : (lower.includes('beach') || lower.includes('jumeirah') ? 'jumeirah_beach' : 'downtown_plaza');
+        setCameraPreset(dest);
+        ['derick', 'laila', 'maya', 'abrar'].forEach(id => navigateEmployeeTo(id, dest, `Exploring ${STATIONS[dest].name}`, { updateHome: false }));
+        appendChatMessage('agent', `🌆 Team is visiting <strong>${STATIONS[dest].name}</strong>! You can also drag or resize any UI tab anytime.`);
+        return;
+      }
+
+      appendChatMessage('agent', '🤖 Command dispatched across the <strong>AI 3D Office, Dubai Marina, Downtown Plaza, Jumeirah Beach &amp; SuperiorMed Clinic</strong>!');
+    }
+
+    document.getElementById('chat-form').addEventListener('submit', e => {
+      e.preventDefault();
+      handleChatText(document.getElementById('chat-input').value);
+    });
+
+    function formatSimClock(mins) {
+      const m = Math.floor(mins) % (24 * 60);
+      const hh24 = Math.floor(m / 60);
+      const mm = m % 60;
+      const ampm = hh24 >= 12 ? 'PM' : 'AM';
+      const hh12 = hh24 % 12 === 0 ? 12 : hh24 % 12;
+      return `${String(hh12).padStart(2, '0')}:${String(mm).padStart(2, '0')} ${ampm}`;
+    }
+
+    function onWindowResize() {
+      if (!camera || !renderer) return;
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function onCanvasClick(event) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(clickableObjects, true);
+      if (hits.length > 0) {
+        let obj = hits[0].object;
+        while (obj && !obj.userData.clickType) obj = obj.parent;
+        if (obj) {
+          if (obj.userData.clickType === 'employee') selectEmployee(obj.userData.clickId);
+          else if (obj.userData.clickType === 'pipoy') focusPipoy();
+          else if (obj.userData.clickType === 'station') openStationPanel(obj.userData.clickId);
+        }
+      }
+    }
+
+    function projectToScreen(vec3) {
+      const v = vec3.clone().project(camera);
+      return {
+        x: (v.x * 0.5 + 0.5) * window.innerWidth,
+        y: (-(v.y * 0.5) + 0.5) * window.innerHeight,
+        visible: v.z < 1
+      };
+    }
+
+    function updateProjectedOverlays() {
+      Object.keys(STATIONS).forEach(key => {
+        const el = document.getElementById(`label-${key}`);
+        if (!el || !STATIONS[key].labelAnchor) return;
+        const p = projectToScreen(STATIONS[key].labelAnchor);
+        if (!p.visible) {
+          el.style.opacity = '0';
+        } else {
+          el.style.opacity = '1';
+          el.style.left = `${p.x}px`;
+          el.style.top = `${p.y}px`;
+        }
+      });
+
+      appState.employees.forEach(emp => {
+        const el = document.getElementById(`emp-label-${emp.id}`);
+        if (!el) return;
+        const p = projectToScreen(emp.currentPos.clone().add(new THREE.Vector3(0, 2.05, 0)));
+        if (!p.visible) {
+          el.style.opacity = '0';
+        } else {
+          el.style.opacity = '1';
+          el.style.left = `${p.x}px`;
+          el.style.top = `${p.y}px`;
+        }
+      });
+
+      if (appState.pipoy) {
+        const pEl = document.getElementById('pipoy-label');
+        if (pEl) {
+          const p = projectToScreen(appState.pipoy.currentPos.clone().add(new THREE.Vector3(0, 0.85, 0)));
+          pEl.style.opacity = p.visible ? '1' : '0';
+          pEl.style.left = `${p.x}px`;
+          pEl.style.top = `${p.y}px`;
+        }
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+      const elapsed = clock.getElapsedTime();
+
+      appState.simMinutes += dt * 1.5;
+      const clockBadge = document.getElementById('sim-clock-badge');
+      if (clockBadge) clockBadge.textContent = formatSimClock(appState.simMinutes);
+
+      if (clinicHoloRing) clinicHoloRing.rotation.z += dt * 1.5;
+      if (burjBeacon) burjBeacon.scale.setScalar(1 + Math.sin(elapsed * 5) * 0.35);
+      if (fountainRing) {
+        fountainRing.rotation.z -= dt * 1.6;
+        fountainRing.position.y = 1.35 + Math.sin(elapsed * 3) * 0.18;
+      }
+      jewelRings.forEach((r, i) => { r.rotation.y += dt * (1.8 + i * 0.4); });
+      yachts.forEach(y => {
+        y.group.position.z += y.dir * y.speed * dt;
+        if (y.dir === 1 && y.group.position.z > 34) y.dir = -1;
+        if (y.dir === -1 && y.group.position.z < -4) y.dir = 1;
+        y.group.rotation.y = y.dir === 1 ? 0 : Math.PI;
+      });
+
+      steamParticles.forEach(p => {
+        p.position.y = p.userData.baseY + ((elapsed * 0.6 + p.userData.offset) % 0.9);
+      });
+
+      // Animate Employees
+      appState.employees.forEach((emp, idx) => {
+        const parts = emp.meshParts;
+        if (!parts) return;
+
+        if (emp.waypoints.length > 0) {
+          const target = emp.waypoints[0];
+          const delta = target.clone().sub(emp.currentPos);
+          delta.y = 0;
+          const dist = delta.length();
+          if (dist < 0.12) {
+            emp.currentPos.copy(target);
+            emp.waypoints.shift();
+          } else {
+            const speed = emp.isJogging ? 4.4 : 2.9;
+            delta.normalize();
+            emp.currentPos.addScaledVector(delta, Math.min(dist, speed * dt));
+            parts.root.rotation.y = Math.atan2(delta.x, delta.z);
+            emp.walkPhase += dt * (emp.isJogging ? 13 : 8.5);
+            parts.leftHip.rotation.x = Math.sin(emp.walkPhase) * 0.65;
+            parts.rightHip.rotation.x = -Math.sin(emp.walkPhase) * 0.65;
+            parts.leftShoulder.rotation.x = -Math.sin(emp.walkPhase) * 0.55;
+            parts.rightShoulder.rotation.x = Math.sin(emp.walkPhase) * 0.55;
+          }
+        } else if (emp.isJogging && parkCurve) {
+          emp.jogAngle = (emp.jogAngle + dt * 0.14) % 1;
+          const pt = parkCurve.getPointAt(emp.jogAngle);
+          const tangent = parkCurve.getTangentAt(emp.jogAngle);
+          emp.currentPos.copy(pt);
+          parts.root.rotation.y = Math.atan2(tangent.x, tangent.z);
+          emp.walkPhase += dt * 14;
+          parts.leftHip.rotation.x = Math.sin(emp.walkPhase) * 0.78;
+          parts.rightHip.rotation.x = -Math.sin(emp.walkPhase) * 0.78;
+          parts.leftShoulder.rotation.x = -Math.sin(emp.walkPhase) * 0.7;
+          parts.rightShoulder.rotation.x = Math.sin(emp.walkPhase) * 0.7;
+        } else {
+          parts.leftHip.rotation.x = 0;
+          parts.rightHip.rotation.x = 0;
+          parts.bodyGroup.position.y = Math.sin(elapsed * 2.2 + idx) * 0.015;
+          parts.headGroup.rotation.y = Math.sin(elapsed * 1.1 + idx * 1.7) * 0.18;
+          parts.headGroup.rotation.x = emp.usingMobile ? 0.25 : 0;
+          parts.leftShoulder.rotation.x = emp.usingMobile ? -1.1 : -0.35 + Math.sin(elapsed * 7 + idx) * 0.08;
+          parts.rightShoulder.rotation.x = emp.holdingCoffee ? -1.15 : -0.35 - Math.sin(elapsed * 7 + idx) * 0.08;
+        }
+
+        parts.root.position.copy(emp.currentPos);
+      });
+
+      // Animate Pipoy Fifth Cabrera
+      if (appState.pipoy) {
+        const p = appState.pipoy;
+        const owner = appState.employees.find(e => e.id === p.ownerId);
+        if (owner) {
+          p.targetPos = owner.currentPos.clone().add(new THREE.Vector3(0.75, 0, 0.55));
+        }
+        const delta = p.targetPos.clone().sub(p.currentPos);
+        delta.y = 0;
+        const dist = delta.length();
+        if (dist > 0.15) {
+          delta.normalize();
+          p.currentPos.addScaledVector(delta, Math.min(dist, 3.2 * dt));
+          p.root.rotation.y = Math.atan2(delta.x, delta.z);
+          p.legs.forEach((l, li) => {
+            l.rotation.x = Math.sin(elapsed * 14 + li * Math.PI) * 0.5;
+          });
+        } else {
+          p.legs.forEach(l => { l.rotation.x = 0; });
+        }
+        p.tail.rotation.z = Math.sin(elapsed * 12) * 0.45;
+        p.root.position.copy(p.currentPos);
+      }
+
+      // Autonomous Living Human NPCs (Cleaning, Eating, Calling, Relaxing & Walking)
+      appState.npcs.forEach(n => {
+        const p = n.parts;
+        if (!p) return;
+        n.phase += dt * 6.5;
+
+        if (n.activity === 'cleaning' || n.activity === 'calling' || n.activity === 'walking') {
+          p.root.position.x += n.dir * n.speed * dt;
+          if (p.root.position.x > n.maxX) n.dir = -1;
+          if (p.root.position.x < n.minX) n.dir = 1;
+          p.root.rotation.y = n.dir === 1 ? Math.PI / 2 : -Math.PI / 2;
+
+          p.leftHip.rotation.x = Math.sin(n.phase) * 0.58;
+          p.rightHip.rotation.x = -Math.sin(n.phase) * 0.58;
+
+          if (n.activity === 'cleaning') {
+            p.leftShoulder.rotation.x = -0.65 + Math.sin(n.phase * 1.4) * 0.25;
+            p.rightShoulder.rotation.x = -0.85 - Math.sin(n.phase * 1.4) * 0.35;
+          } else if (n.activity === 'calling') {
+            // Left hand holding smartphone up to ear while walking
+            p.leftShoulder.rotation.x = -2.35;
+            p.leftShoulder.rotation.z = -0.35;
+            p.rightShoulder.rotation.x = Math.sin(n.phase) * 0.45;
+            p.headGroup.rotation.y = Math.sin(elapsed * 2.5 + n.phase) * 0.14;
+          } else {
+            p.leftShoulder.rotation.x = -Math.sin(n.phase) * 0.5;
+            p.rightShoulder.rotation.x = Math.sin(n.phase) * 0.5;
+          }
+        } else if (n.activity === 'eating') {
+          // Raising snack to mouth & nodding while enjoying street food
+          const bite = Math.sin(elapsed * 2.4 + n.phase);
+          p.rightShoulder.rotation.x = -1.35 + bite * 0.45;
+          p.headGroup.rotation.x = bite > 0.3 ? -0.15 : 0.08;
+        } else if (n.activity === 'relaxing') {
+          // Seated on park bench, breathing & looking around peacefully
+          p.bodyGroup.position.y = -0.32 + Math.sin(elapsed * 1.8 + n.phase) * 0.015;
+          p.headGroup.rotation.y = Math.sin(elapsed * 0.9 + n.phase) * 0.32;
+          p.leftShoulder.rotation.x = -0.45;
+          p.rightShoulder.rotation.x = -0.45;
+        } else if (n.activity === 'vendor') {
+          // Street food vendor prepping food at cart
+          p.leftShoulder.rotation.x = -0.75 + Math.sin(elapsed * 5 + n.phase) * 0.2;
+          p.rightShoulder.rotation.x = -0.75 - Math.sin(elapsed * 5 + n.phase) * 0.2;
+        }
+      });
+
+      // Autonomous Driving Cars on Boulevard
+      appState.npcCars.forEach(car => {
+        car.group.position.x += car.dir * car.speed * dt;
+        if (car.dir === 1 && car.group.position.x > car.maxX) car.group.position.x = car.minX;
+        if (car.dir === -1 && car.group.position.x < car.minX) car.group.position.x = car.maxX;
+        car.wheels.forEach(w => { w.rotation.x += car.speed * dt * 2.8; });
+      });
+
+      // Flying Birds
+      appState.birds.forEach((b, i) => {
+        b.angle += dt * 0.45;
+        b.group.position.x = Math.cos(b.angle) * b.radius;
+        b.group.position.z = 12 + Math.sin(b.angle) * (b.radius * 0.7);
+        b.group.position.y = b.height + Math.sin(elapsed * 2 + i) * 0.6;
+        b.group.rotation.y = -b.angle;
+        const flap = Math.sin(elapsed * 11 + i) * 0.45;
+        b.leftWing.rotation.z = flap;
+        b.rightWing.rotation.z = -flap;
+      });
+
+      // Weather Particles
+      if (appState.rainSystem && appState.rainSystem.visible) {
+        const posArr = appState.rainSystem.geometry.attributes.position.array;
+        const isSand = appState.weatherMode === 'sandstorm';
+        for (let i = 0; i < posArr.length; i += 3) {
+          posArr[i] += isSand ? 14 * dt : 0;
+          posArr[i + 1] -= isSand ? 2 * dt : 18 * dt;
+          if (posArr[i + 1] < 0) posArr[i + 1] = 28;
+          if (posArr[i] > 45) posArr[i] = -45;
+        }
+        appState.rainSystem.geometry.attributes.position.needsUpdate = true;
+      }
+
+      // Handoff Beams
+      for (let i = appState.handoffBeams.length - 1; i >= 0; i--) {
+        appState.handoffBeams[i].ttl -= dt;
+        if (appState.handoffBeams[i].ttl <= 0) {
+          scene.remove(appState.handoffBeams[i].line);
+          appState.handoffBeams.splice(i, 1);
+        }
+      }
+
+      if (controls && controls.update) controls.update();
+      updateProjectedOverlays();
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('DOMContentLoaded', init3DScene);
+  </script>
+</body>
+</html>
