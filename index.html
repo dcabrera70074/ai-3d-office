@@ -202,6 +202,9 @@
     <div id="label-burj_khalifa" data-station="burj_khalifa" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-amber-300/90">
       <span class="text-xs">🗼</span><span class="text-[11px] font-bold text-amber-100">Burj Khalifa · Sky View &amp; Dating</span>
     </div>
+    <div id="label-night_market" data-station="night_market" class="station-label glass px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-lg border-fuchsia-400/90">
+      <span class="text-xs">🏮</span><span class="text-[11px] font-bold text-fuchsia-100">Dubai Night Market · 7 Stalls</span>
+    </div>
   </div>
 
   <!-- Projected Employee & Pet Nameplates -->
@@ -231,6 +234,7 @@
         <button onclick="setCameraPreset('marina')" class="px-2 py-1 rounded-lg bg-blue-500/20 hover:bg-blue-500/30 border border-blue-400/40 text-blue-200 font-semibold shrink-0">🛥️ Marina</button>
         <button onclick="setCameraPreset('downtown_plaza')" class="px-2 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-200 font-semibold shrink-0">🏙️ Downtown</button>
         <button onclick="setCameraPreset('burj_khalifa')" class="px-2 py-1 rounded-lg bg-yellow-500/25 hover:bg-yellow-500/35 border border-yellow-300/50 text-yellow-100 font-extrabold shrink-0">🗼 Burj Khalifa</button>
+        <button onclick="setCameraPreset('night_market')" class="px-2 py-1 rounded-lg bg-fuchsia-500/25 hover:bg-fuchsia-500/35 border border-fuchsia-400/50 text-fuchsia-100 font-extrabold shrink-0">🏮 Night Market</button>
         <button onclick="setCameraPreset('jumeirah_beach')" class="px-2 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 border border-cyan-400/40 text-cyan-200 font-semibold shrink-0">🏖️ Beach</button>
         <button onclick="setCameraPreset('atm')" class="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-200 font-semibold shrink-0">🏧 ATM</button>
         <button onclick="setCameraPreset('superiormed')" class="px-2 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500/30 border border-teal-400/40 text-teal-200 font-semibold shrink-0">🏥 Clinic</button>
@@ -246,7 +250,8 @@
 
       <!-- Account Login/Register, Time, Weather, Save & Layout Controls -->
       <div class="flex flex-wrap items-center gap-1 text-[10px]">
-        <button id="active-account-badge" onclick="openAccountModal('login')" title="Log In or Register New Gamer Account" class="px-2 py-1 rounded-lg bg-amber-500/25 hover:bg-amber-500/40 border border-amber-400/60 text-amber-100 font-extrabold">👑 Admin: Derick</button>
+        <button id="active-account-badge" onclick="openAccountModal('login')" title="Log In, Log Out or Register New Account" class="px-2 py-1 rounded-lg bg-amber-500/25 hover:bg-amber-500/40 border border-amber-400/60 text-amber-100 font-extrabold">👑 Admin: Derick</button>
+        <button id="header-logout-btn" onclick="handleGamerLogout()" title="Log Out of Current Account" class="px-2 py-1 rounded-lg bg-rose-500/25 hover:bg-rose-500/40 border border-rose-400/50 text-rose-100 font-extrabold">🚪 Log Out</button>
         <span id="sim-clock-badge" class="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 font-mono text-amber-300 font-bold">09:15 AM</span>
         <button onclick="processMonthlyPayday()" title="Run Team Salary Payroll" class="px-2 py-1 rounded-lg bg-emerald-500/25 hover:bg-emerald-500/40 border border-emerald-400/50 text-emerald-200 font-extrabold">💰 Payday</button>
         <button onclick="openMobilePhoneModal()" title="Open Smartphone (Texting, Fakebook & Intagram)" class="px-2 py-1 rounded-lg bg-blue-500/25 hover:bg-blue-500/40 border border-blue-400/50 text-blue-100 font-extrabold">📱 Phone</button>
@@ -348,6 +353,7 @@
         <button id="emp-burj-btn" class="py-1.5 px-1 rounded-lg bg-yellow-500/25 hover:bg-yellow-500/35 border border-yellow-300/50 text-yellow-100 font-bold">🗼 Date 250</button>
         <button id="emp-toilet-btn" class="py-1.5 px-1 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 font-semibold">🚻 Toilet</button>
         <button id="emp-books-btn" class="py-1.5 px-1 rounded-lg bg-violet-500/20 hover:bg-violet-500/30 border border-violet-400/40 text-violet-200 font-semibold">📚 95</button>
+        <button id="emp-nightmarket-btn" class="py-1.5 px-1 rounded-lg bg-fuchsia-500/20 hover:bg-fuchsia-500/30 border border-fuchsia-400/40 text-fuchsia-100 font-bold">🏮 Market</button>
         <button id="emp-mobile-btn" class="py-1.5 px-1 rounded-lg bg-blue-500/25 hover:bg-blue-500/35 border border-blue-400/50 text-blue-100 font-bold">📱 Phone</button>
         <button id="emp-apply-job-btn" onclick="openJobApplyModal()" class="py-1.5 px-1 rounded-lg bg-amber-500/25 hover:bg-amber-500/35 border border-amber-400/50 text-amber-100 font-bold">💼 Apply Job</button>
         <button id="emp-work-btn" class="col-span-2 py-1.5 px-1 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-semibold">🏢 Walk to Work Desk</button>
@@ -468,10 +474,16 @@
     <div class="glass rounded-2xl p-5 w-full max-w-md flex flex-col gap-3 shadow-2xl border-amber-400/50 max-h-[92vh] overflow-y-auto custom-scroll">
       <div class="flex items-center justify-between border-b border-slate-700 pb-2">
         <div>
-          <h3 class="text-sm font-extrabold text-white">🎮 Gamer Portal · Login &amp; Registration</h3>
-          <p class="text-[10px] text-slate-300">Each gamer accesses only their own account &amp; house. <strong>Derick</strong> is Main Admin.</p>
+          <h3 class="text-sm font-extrabold text-white">🎮 Gamer Portal · Login, Logout &amp; Registration</h3>
+          <p class="text-[10px] text-slate-300">All registered accounts are saved permanently. Log out anytime and log back in later.</p>
         </div>
         <button onclick="closeAccountModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
+      </div>
+
+      <!-- Current Session Status & Log Out Bar -->
+      <div id="account-session-bar" class="p-2.5 rounded-xl bg-slate-900/95 border border-slate-700 flex items-center justify-between gap-2 text-xs">
+        <div id="account-session-text" class="text-slate-200">Logged in as <strong class="text-amber-300">Derick (Admin)</strong></div>
+        <button id="modal-logout-btn" type="button" onclick="handleGamerLogout()" class="px-3 py-1 rounded-lg bg-rose-500 hover:bg-rose-400 text-white font-extrabold text-[11px] shrink-0">🚪 Log Out</button>
       </div>
 
       <!-- Mode Switcher: Log In vs. Register New Gamer -->
@@ -523,44 +535,65 @@
             </select>
           </label>
           <label class="flex flex-col gap-1">
-            <span class="text-slate-300 text-[10px] font-bold">Outfit Color</span>
-            <input id="reg-color" type="color" value="#38bdf8" class="w-full h-9 rounded-xl bg-slate-950 border border-slate-700 cursor-pointer" />
+            <span class="text-slate-300 text-[10px] font-bold">Outfit Color *</span>
+            <select id="reg-color" class="bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-2 text-white">
+              <option value="#38bdf8">Sky Cyan</option>
+              <option value="#f43f5e">Rose Pink</option>
+              <option value="#10b981">Emerald Green</option>
+              <option value="#a855f7">Royal Violet</option>
+              <option value="#f59e0b">Dubai Gold</option>
+            </select>
           </label>
         </div>
         <div id="reg-feedback" class="text-[11px] text-rose-300 min-h-[14px]"></div>
-        <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-400 to-emerald-400 hover:opacity-95 text-slate-950 font-extrabold text-xs shadow">
-          ✨ Create Gamer Account (AED 0 + House) &amp; Apply for Job
+        <button type="submit" class="w-full py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-emerald-400 hover:opacity-95 text-slate-950 font-extrabold text-xs shadow">
+          ✨ Create Gamer Account, House &amp; Start (AED 0)
         </button>
       </form>
     </div>
   </div>
 
-  <!-- Apply for Work / Career Transfer Modal -->
+  <!-- Apply for Work / Career Transfer Modal (With Qualification Check & Pass/Fail) -->
   <div id="job-apply-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="glass rounded-2xl p-5 w-full max-w-md flex flex-col gap-3 shadow-2xl border-emerald-400/50">
+    <div class="glass rounded-2xl p-5 w-full max-w-lg flex flex-col gap-3 shadow-2xl border-emerald-400/50 max-h-[90vh] overflow-y-auto custom-scroll">
       <div class="flex items-center justify-between border-b border-slate-700 pb-2">
-        <h3 class="text-sm font-extrabold text-white">💼 Apply for Work / Career Position</h3>
+        <div>
+          <h3 class="text-sm font-extrabold text-white">💼 Dubai Career Center · Apply for Work</h3>
+          <p class="text-[10px] text-slate-300">Establishments screen qualifications &amp; headcount limits (Pass / Fail evaluation).</p>
+        </div>
         <button onclick="closeJobApplyModal()" class="text-slate-400 hover:text-white font-bold">✕</button>
       </div>
-      <p id="job-applicant-label" class="text-xs text-slate-300">Applicant: <strong>Derick</strong></p>
+      <div id="job-applicant-label" class="text-xs text-slate-200 bg-slate-900/90 p-2.5 rounded-xl border border-slate-700">Applicant: <strong>Derick</strong></div>
       <div class="flex flex-col gap-1.5 text-xs">
-        <label class="text-[10px] font-bold uppercase text-slate-400">Select Available Position &amp; Monthly Salary</label>
-        <select id="apply-job-select" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
-          <option value="derick|Digital Marketing Strategist|16000">🏢 AI 3D Office — Digital Marketing Strategist (AED 16,000/mo)</option>
-          <option value="blender|Senior Blender 5.3 Artist|17500">🎨 Blender 5.3 Studio — Senior 3D Artist (AED 17,500/mo)</option>
-          <option value="tiktok|Social Media Content Creator|16000">📱 TikTok &amp; Facebook — Content Creator (AED 16,000/mo)</option>
-          <option value="gmail|Executive Client Relations|14500">✉️ Gmail Desk — Client Relations (AED 14,500/mo)</option>
-          <option value="superiormed|SuperiorMed Longevity Advisor|19000">🏥 SuperiorMed Clinic — Longevity Advisor (AED 19,000/mo)</option>
-          <option value="clinic_annex|Clinic Annex Wellness Specialist|19500">🩺 SuperiorMed Annex — Wellness Specialist (AED 19,500/mo)</option>
-          <option value="jewellery|Aurelia 24K Gold Specialist|15500">💎 Aurelia Jewellery — Luxury Consultant (AED 15,500/mo)</option>
-          <option value="restaurant|Le Petit Bistro Culinary Specialist|13000">🍽️ Le Petit Bistro — Culinary Specialist (AED 13,000/mo)</option>
-          <option value="supermarket|FreshMart Operations Lead|12000">🛒 FreshMart Supermarket — Operations Lead (AED 12,000/mo)</option>
-          <option value="bookstore|Al-Noor Bookstore Manager|11800">📚 Al-Noor Bookstore — Store Manager (AED 11,800/mo)</option>
+        <label class="text-[10px] font-bold uppercase text-slate-400">Choose Establishment &amp; Position</label>
+        <select id="apply-job-select" onchange="previewSelectedJobRequirement()" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white">
+          <option value="derick|Digital Marketing Associate (Derick HQ)|15500|1|0|3">🏢 Derick's Marketing HQ — Digital Marketing Associate (AED 15,500/mo · Max 3 Staff)</option>
+          <option value="derick|Campaign Growth Strategist (Derick HQ)|18500|2|40|2">🏢 Derick's Marketing HQ — Campaign Growth Strategist (AED 18,500/mo · Fit Lv.2, 40 XP · Max 2)</option>
+          <option value="blender|Junior 3D Visualizer (Blender 5.3)|16000|1|20|2">🎨 Blender 5.3 Studio — Junior 3D Visualizer (AED 16,000/mo · 20 XP · Max 2)</option>
+          <option value="tiktok|TikTok & Facebook Content Creator|15800|1|15|3">📱 Social Media Studio — TikTok &amp; Facebook Creator (AED 15,800/mo · 15 XP · Max 3)</option>
+          <option value="gmail|Client Inbox Coordinator|13800|1|0|2">✉️ Gmail Desk — Client Inbox Coordinator (AED 13,800/mo · Entry Level · Max 2)</option>
+          <option value="drive|Cloud Asset Archivist|14000|1|0|2">📁 Google Drive — Cloud Asset Archivist (AED 14,000/mo · Entry Level · Max 2)</option>
+          <option value="restaurant|Le Petit Bistro Waiter & Host|11500|1|0|3">🍽️ Le Petit Bistro Restaurant — Waiter &amp; Host (AED 11,500/mo · Entry Level · Max 3)</option>
+          <option value="restaurant|Le Petit Bistro Sous Chef|14500|2|35|2">👨‍🍳 Le Petit Bistro Restaurant — Sous Chef (AED 14,500/mo · Fit Lv.2, 35 XP · Max 2)</option>
+          <option value="supermarket|FreshMart Supermarket Cashier & Stocker|11200|1|0|3">🛒 FreshMart Supermarket — Cashier &amp; Stocker (AED 11,200/mo · Entry Level · Max 3)</option>
+          <option value="supermarket|FreshMart Produce & Inventory Supervisor|13800|2|30|2">🥬 FreshMart Supermarket — Inventory Supervisor (AED 13,800/mo · Fit Lv.2, 30 XP · Max 2)</option>
+          <option value="bookstore|Al-Noor Bookstore Sales Associate|11000|1|0|3">📚 Al-Noor Bookstore — Sales Associate (AED 11,000/mo · Entry Level · Max 3)</option>
+          <option value="bookstore|Al-Noor Stationery & Supply Buyer|13500|1|25|2">📦 Al-Noor Bookstore — Supply Buyer (AED 13,500/mo · 25 XP · Max 2)</option>
+          <option value="jewellery|Aurelia Jewellery Boutique Advisor|16200|1|30|3">💎 Aurelia Jewellery — Luxury Boutique Advisor (AED 16,200/mo · 30 XP · Max 3)</option>
+          <option value="superiormed|SuperiorMed Longevity Care Coordinator|18800|2|50|4">🏥 SuperiorMed Clinic — Longevity Care Coordinator (AED 18,800/mo · Fit Lv.2, 50 XP · Max 4)</option>
+          <option value="clinic_annex|Clinic Annex Medical Assistant|17500|2|45|4">🩺 SuperiorMed Clinic Annex — Medical Assistant (AED 17,500/mo · Fit Lv.2, 45 XP · Max 4)</option>
+          <option value="night_market|Night Market Street Food Vendor|10800|1|0|3">🍢 Dubai Night Market — Street Food Stall Vendor (AED 10,800/mo · Entry Level · Max 3)</option>
+          <option value="night_market|Night Market Clothing & Shoes Merchant|11600|1|0|3">👟 Dubai Night Market — Clothing &amp; Shoes Merchant (AED 11,600/mo · Entry Level · Max 3)</option>
+          <option value="night_market|Night Market Home Depot & Second-Hand Trader|12200|1|15|2">🛠️ Dubai Night Market — Home Depot &amp; Second-Hand Trader (AED 12,200/mo · 15 XP · Max 2)</option>
+          <option value="marina|Dubai Marina Yacht Deckhand|14200|2|25|2">🛥️ Dubai Marina — Yacht Deckhand &amp; Host (AED 14,200/mo · Fit Lv.2, 25 XP · Max 2)</option>
+          <option value="jumeirah_beach|Jumeirah Beach Lifeguard & Cabana Host|13200|2|20|2">🏖️ Jumeirah Beach — Lifeguard &amp; Cabana Host (AED 13,200/mo · Fit Lv.2, 20 XP · Max 2)</option>
         </select>
       </div>
+      <div id="job-requirement-preview" class="p-2.5 rounded-xl bg-slate-950/90 border border-slate-700 text-[11px] text-slate-200"></div>
+      <div id="job-application-result" class="hidden p-3 rounded-xl border text-xs leading-relaxed"></div>
       <div class="flex justify-end gap-2 pt-1">
-        <button onclick="closeJobApplyModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Cancel</button>
-        <button onclick="submitJobApplication()" class="px-4 py-1.5 rounded-xl bg-emerald-400 text-slate-950 text-xs font-extrabold">✅ Accept Job &amp; Walk to Work</button>
+        <button onclick="closeJobApplyModal()" class="px-3 py-1.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold">Close</button>
+        <button onclick="submitJobApplication()" class="px-4 py-1.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-slate-950 text-xs font-extrabold">📋 Submit Application &amp; Interview</button>
       </div>
     </div>
   </div>
@@ -790,14 +823,15 @@
       level: 1,
       xp: 0,
       tasksCompleted: 0,
-      unlockedBuildings: ['office', 'superiormed', 'clinic_annex', 'supermarket', 'bookstore', 'jewellery', 'restaurant', 'park', 'houses', 'marina', 'downtown_plaza', 'jumeirah_beach', 'atm', 'burj_khalifa'],
+      unlockedBuildings: ['office', 'superiormed', 'clinic_annex', 'supermarket', 'bookstore', 'jewellery', 'restaurant', 'park', 'houses', 'marina', 'downtown_plaza', 'jumeirah_beach', 'atm', 'burj_khalifa', 'night_market'],
       stationUpgrades: {
         officeKitchenRefills: 0,
         clinicKitchenRefills: 0,
         blenderRendersExported: 0,
         socialPostsPublished: 0,
         burjDatesCompleted: 0,
-        atmWithdrawals: 0
+        atmWithdrawals: 0,
+        nightMarketPurchases: 0
       },
       achievements: ['Dubai HQ Founded'],
       employees: [],
@@ -869,7 +903,7 @@
       return {
         saveVersion: CURRENT_SAVE_VERSION,
         savedAt: Date.now(),
-        currentAccountId: appState.currentAccountId || 'derick',
+        currentAccountId: appState.currentAccountId === undefined ? 'derick' : appState.currentAccountId,
         registeredAccounts: appState.registeredAccounts || [{ id: 'derick', username: ADMIN_USERNAME, name: 'Derick', isAdmin: true, pin: ADMIN_PASSWORD }],
         selectedEmployeeId: appState.selectedEmployeeId,
         timeMode: appState.timeMode,
@@ -1492,6 +1526,20 @@
           new THREE.Vector3(34.5, 0, 23.4)
         ],
         labelAnchor: new THREE.Vector3(36.0, 14.5, 22.5)
+      },
+      night_market: {
+        name: 'Dubai Night Market (7 Vendor Stalls: Food, Clothing, Shoes, Home Depot & Second-Hand)',
+        isExterior: true,
+        pos: new THREE.Vector3(24.5, 0, 22.0),
+        corridorEntry: new THREE.Vector3(24.5, 0, 15.2),
+        standSlots: [
+          new THREE.Vector3(21.5, 0, 20.5),
+          new THREE.Vector3(24.5, 0, 20.5),
+          new THREE.Vector3(27.5, 0, 20.5),
+          new THREE.Vector3(23.0, 0, 23.2),
+          new THREE.Vector3(26.0, 0, 23.2)
+        ],
+        labelAnchor: new THREE.Vector3(24.5, 4.5, 22.0)
       }
     };
 
@@ -1574,7 +1622,7 @@
     function init3DScene() {
       const savedData = loadSavedGameState();
       if (savedData) {
-        appState.currentAccountId = savedData.currentAccountId || 'derick';
+        appState.currentAccountId = savedData.currentAccountId !== undefined ? savedData.currentAccountId : 'derick';
         if (Array.isArray(savedData.registeredAccounts) && savedData.registeredAccounts.length > 0) {
           appState.registeredAccounts = savedData.registeredAccounts;
         }
@@ -1644,6 +1692,7 @@
       buildNeighboringDubaiCities();
       buildATMMachine();
       buildBurjKhalifaLandmark();
+      buildNightMarketPlaza();
       buildAI3DOffice();
       buildSuperiorMedClinic();
       buildSuperiorMedAnnex();
@@ -1675,7 +1724,7 @@
           const stKey = lbl.getAttribute('data-station');
           if (stKey) {
             openStationPanel(stKey);
-            if (['superiormed', 'clinic_annex', 'supermarket', 'bookstore', 'jewellery', 'restaurant', 'park', 'houses', 'atm', 'burj_khalifa', 'marina', 'downtown_plaza', 'jumeirah_beach'].includes(stKey)) {
+            if (['superiormed', 'clinic_annex', 'supermarket', 'bookstore', 'jewellery', 'restaurant', 'park', 'houses', 'atm', 'burj_khalifa', 'night_market', 'marina', 'downtown_plaza', 'jumeirah_beach'].includes(stKey)) {
               setCameraPreset(stKey);
             }
           }
@@ -1743,69 +1792,215 @@
       const group = new THREE.Group();
       group.position.set(36.0, 0, 22.5);
 
+      // Waterfront Promenade & Romantic Fountain Deck
       const plaza = new THREE.Mesh(
-        new THREE.CylinderGeometry(6.2, 6.6, 0.24, 32),
-        new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.35 })
+        new THREE.CylinderGeometry(5.6, 5.9, 0.22, 32),
+        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.4 })
       );
-      plaza.position.y = 0.1;
+      plaza.position.y = -0.06;
       registerClickable(plaza, 'station', 'burj_khalifa');
       group.add(plaza);
 
       const lakeRing = new THREE.Mesh(
-        new THREE.TorusGeometry(5.2, 0.45, 10, 36),
-        new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x38bdf8, emissiveIntensity: 0.45 })
+        new THREE.TorusGeometry(4.8, 0.35, 10, 36),
+        new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0ea5e9, emissiveIntensity: 0.45 })
       );
       lakeRing.rotation.x = Math.PI / 2;
-      lakeRing.position.y = 0.22;
+      lakeRing.position.y = 0.06;
       registerClickable(lakeRing, 'station', 'burj_khalifa');
       group.add(lakeRing);
 
+      // Stepped Y-Wing Burj Khalifa Tiers
+      const glassMat = new THREE.MeshStandardMaterial({
+        color: 0xe0f2fe,
+        metalness: 0.85,
+        roughness: 0.15,
+        emissive: 0x38bdf8,
+        emissiveIntensity: 0.22
+      });
       const tiers = [
-        { rTop: 1.9, rBot: 2.3, h: 6.5, y: 3.4, c: 0x0f172a },
-        { rTop: 1.45, rBot: 1.85, h: 6.0, y: 9.5, c: 0x1e3a8a },
-        { rTop: 1.0, rBot: 1.4, h: 5.5, y: 15.1, c: 0x0284c7 },
-        { rTop: 0.55, rBot: 0.95, h: 5.0, y: 20.2, c: 0x38bdf8 },
-        { rTop: 0.12, rBot: 0.48, h: 6.5, y: 25.8, c: 0xfef08a }
+        { rTop: 1.55, rBot: 2.05, h: 4.5, y: 2.25 },
+        { rTop: 1.15, rBot: 1.5, h: 4.2, y: 6.5 },
+        { rTop: 0.78, rBot: 1.1, h: 3.8, y: 10.4 },
+        { rTop: 0.42, rBot: 0.72, h: 3.4, y: 13.9 }
       ];
       tiers.forEach(t => {
-        const seg = new THREE.Mesh(
-          new THREE.CylinderGeometry(t.rTop, t.rBot, t.h, 6),
-          new THREE.MeshStandardMaterial({
-            color: t.c,
-            metalness: 0.85,
-            roughness: 0.15,
-            emissive: 0x38bdf8,
-            emissiveIntensity: 0.28
-          })
-        );
-        seg.position.y = t.y;
-        seg.castShadow = true;
-        registerClickable(seg, 'station', 'burj_khalifa');
-        group.add(seg);
+        const tierMesh = new THREE.Mesh(new THREE.CylinderGeometry(t.rTop, t.rBot, t.h, 6), glassMat);
+        tierMesh.position.y = t.y;
+        tierMesh.castShadow = true;
+        registerClickable(tierMesh, 'station', 'burj_khalifa');
+        group.add(tierMesh);
       });
 
-      const arch = new THREE.Mesh(
-        new THREE.TorusGeometry(1.35, 0.08, 12, 28, Math.PI),
-        new THREE.MeshStandardMaterial({ color: 0xfde047, emissive: 0xf59e0b, emissiveIntensity: 0.75 })
+      // Sky Lounge Observation Deck Ring
+      const obsDeck = new THREE.Mesh(
+        new THREE.TorusGeometry(1.38, 0.14, 12, 28),
+        new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf59e0b, emissiveIntensity: 0.75 })
       );
-      arch.position.set(0, 0.25, -1.6);
+      obsDeck.rotation.x = Math.PI / 2;
+      obsDeck.position.y = 8.6;
+      registerClickable(obsDeck, 'station', 'burj_khalifa');
+      group.add(obsDeck);
+
+      // Pinnacle Spire & Pulsing Beacon
+      const spire = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.36, 5.2, 8),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.9, roughness: 0.1 })
+      );
+      spire.position.y = 18.1;
+      registerClickable(spire, 'station', 'burj_khalifa');
+      group.add(spire);
+
+      burjBeacon = new THREE.Mesh(
+        new THREE.SphereGeometry(0.24, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0xfef08a })
+      );
+      burjBeacon.position.y = 20.8;
+      group.add(burjBeacon);
+
+      // Romantic Dating Heart/Gold Arch & Benches
+      const arch = new THREE.Mesh(
+        new THREE.TorusGeometry(1.45, 0.1, 10, 24, Math.PI),
+        new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0xf43f5e, emissiveIntensity: 0.55 })
+      );
+      arch.position.set(0, 0.1, -2.5);
       registerClickable(arch, 'station', 'burj_khalifa');
       group.add(arch);
 
-      burjBeacon = new THREE.Mesh(
-        new THREE.SphereGeometry(0.32, 12, 12),
-        new THREE.MeshBasicMaterial({ color: 0xfef08a })
-      );
-      burjBeacon.position.set(0, 29.3, 0);
-      group.add(burjBeacon);
-
       const sign = new THREE.Mesh(
-        new THREE.BoxGeometry(7.2, 0.9, 0.2),
-        new THREE.MeshBasicMaterial({ map: createSignTexture('BURJ KHALIFA · AT THE TOP', 'Dubai Sky View · Romantic Dating Promenade', '#0f172a', '#fde047') })
+        new THREE.BoxGeometry(6.8, 0.85, 0.2),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('BURJ KHALIFA · DUBAI', 'At The Top Sky View & Romantic Dating Plaza', '#0f172a', '#fde047') })
       );
-      sign.position.set(0, 3.6, -4.6);
+      sign.position.set(0, 3.4, -4.3);
       registerClickable(sign, 'station', 'burj_khalifa');
       group.add(sign);
+
+      scene.add(group);
+    }
+
+    function buildNightMarketPlaza() {
+      const group = new THREE.Group();
+      group.position.set(24.5, 0, 22.0);
+
+      const plazaFloor = new THREE.Mesh(
+        new THREE.BoxGeometry(11.4, 0.18, 9.6),
+        new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.55 })
+      );
+      plazaFloor.position.y = -0.08;
+      registerClickable(plazaFloor, 'station', 'night_market');
+      group.add(plazaFloor);
+
+      const banner = new THREE.Mesh(
+        new THREE.BoxGeometry(10.6, 0.95, 0.24),
+        new THREE.MeshBasicMaterial({ map: createSignTexture('DUBAI NIGHT MARKET · 7 STALLS', 'Food · Clothing · Shoes · Home Depot · 2nd-Hand', '#3b0764', '#f472b6') })
+      );
+      banner.position.set(0, 4.2, -4.4);
+      registerClickable(banner, 'station', 'night_market');
+      group.add(banner);
+
+      // 7 Small Vendor Stalls arranged in two vibrant market rows
+      const stallConfigs = [
+        { x: -3.8, z: -2.2, name: '1. Street Foods', canopy: 0xf97316, goods: 0xfde047, skin: 0xd99b66, gender: 'male' },
+        { x: -1.3, z: -2.2, name: '2. Fashion Clothing', canopy: 0xec4899, goods: 0xf472b6, skin: 0xf1c27d, gender: 'female' },
+        { x: 1.3, z: -2.2, name: '3. Sneakers & Shoes', canopy: 0x3b82f6, goods: 0x93c5fd, skin: 0xe0ac69, gender: 'male' },
+        { x: 3.8, z: -2.2, name: '4. Home Depot Tools', canopy: 0xeab308, goods: 0xfacc15, skin: 0x8d5524, gender: 'male' },
+        { x: -2.6, z: 2.2, name: '5. Second-Hand Deals', canopy: 0x10b981, goods: 0x6ee7b7, skin: 0xf1c27d, gender: 'female' },
+        { x: 0.0, z: 2.2, name: '6. Vintage & Thrift', canopy: 0x8b5cf6, goods: 0xc4b5fd, skin: 0xd99b66, gender: 'male' },
+        { x: 2.6, z: 2.2, name: '7. Grilled Snacks & Tea', canopy: 0xef4444, goods: 0xfca5a5, skin: 0xfad7b8, gender: 'female' }
+      ];
+
+      stallConfigs.forEach((st, idx) => {
+        const stall = new THREE.Group();
+        stall.position.set(st.x, 0, st.z);
+
+        const table = new THREE.Mesh(
+          new THREE.BoxGeometry(1.75, 0.82, 0.9),
+          new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.65 })
+        );
+        table.position.y = 0.41;
+        registerClickable(table, 'station', 'night_market');
+        stall.add(table);
+
+        // Merchandise display boxes on counter
+        [-0.45, 0, 0.45].forEach((gx, gi) => {
+          const item = new THREE.Mesh(
+            new THREE.BoxGeometry(0.36, 0.22 + (gi % 2) * 0.1, 0.42),
+            new THREE.MeshStandardMaterial({ color: st.goods, roughness: 0.35 })
+          );
+          item.position.set(gx, 0.95, 0);
+          stall.add(item);
+        });
+
+        const roof = new THREE.Mesh(
+          new THREE.BoxGeometry(1.95, 0.12, 1.15),
+          new THREE.MeshStandardMaterial({ color: st.canopy, emissive: st.canopy, emissiveIntensity: 0.25 })
+        );
+        roof.position.y = 2.05;
+        registerClickable(roof, 'station', 'night_market');
+        stall.add(roof);
+
+        [[-0.85, -0.45], [0.85, -0.45], [-0.85, 0.45], [0.85, 0.45]].forEach(([px, pz]) => {
+          const post = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.03, 0.03, 1.25, 6),
+            new THREE.MeshStandardMaterial({ color: 0xfef3c7 })
+          );
+          post.position.set(px, 1.42, pz);
+          stall.add(post);
+        });
+
+        const lantern = new THREE.Mesh(
+          new THREE.SphereGeometry(0.11, 8, 8),
+          new THREE.MeshBasicMaterial({ color: 0xfef08a })
+        );
+        lantern.position.set(0, 1.9, 0.5);
+        stall.add(lantern);
+
+        group.add(stall);
+
+        // Autonomous Stall Vendor behind counter
+        const vendorParts = createEmployeeAvatarMesh({
+          id: `nm_vendor_${idx}`,
+          gender: st.gender,
+          color: `#${st.canopy.toString(16).padStart(6, '0')}`,
+          skinColor: st.skin,
+          hairColor: 0x1c1917
+        });
+        vendorParts.root.position.set(24.5 + st.x, 0, 22.0 + st.z - 0.65);
+        scene.add(vendorParts.root);
+        appState.npcs.push({
+          parts: vendorParts,
+          activity: 'vendor',
+          phase: idx * 1.4
+        });
+      });
+
+      // Autonomous NPC Shoppers browsing & buying at the 7 Night Market stalls
+      const shopperSpots = [
+        { x: 20.7, z: 20.6, rotY: Math.PI, color: '#38bdf8', gender: 'female', skin: 0xf1c27d },
+        { x: 23.2, z: 20.6, rotY: Math.PI, color: '#f59e0b', gender: 'male', skin: 0xd99b66 },
+        { x: 25.8, z: 20.6, rotY: Math.PI, color: '#a855f7', gender: 'female', skin: 0xfad7b8 },
+        { x: 28.3, z: 20.6, rotY: Math.PI, color: '#10b981', gender: 'male', skin: 0x8d5524 },
+        { x: 21.9, z: 25.0, rotY: Math.PI, color: '#f43f5e', gender: 'female', skin: 0xe0ac69 },
+        { x: 27.1, z: 25.0, rotY: Math.PI, color: '#06b6d4', gender: 'male', skin: 0xd99b66 }
+      ];
+      shopperSpots.forEach((sh, idx) => {
+        const buyerParts = createEmployeeAvatarMesh({
+          id: `nm_buyer_${idx}`,
+          gender: sh.gender,
+          color: sh.color,
+          skinColor: sh.skin,
+          hairColor: 0x1e1b18
+        });
+        buyerParts.groceryBag.visible = true;
+        buyerParts.root.position.set(sh.x, 0, sh.z);
+        buyerParts.root.rotation.y = sh.rotY;
+        scene.add(buyerParts.root);
+        appState.npcs.push({
+          parts: buyerParts,
+          activity: 'shopping',
+          phase: idx * 1.9
+        });
+      });
 
       scene.add(group);
     }
@@ -3342,7 +3537,7 @@
       waypoints.push(destPos);
       emp.waypoints = waypoints;
       emp.station = stationKey;
-      if (opts.updateHome !== false && !['coffee', 'clinic_coffee', 'washroom', 'restaurant', 'park', 'houses', 'supermarket', 'bookstore', 'jewellery', 'atm', 'burj_khalifa'].includes(stationKey)) {
+      if (opts.updateHome !== false && !['coffee', 'clinic_coffee', 'washroom', 'restaurant', 'park', 'houses', 'supermarket', 'bookstore', 'jewellery', 'atm', 'burj_khalifa', 'night_market'].includes(stationKey)) {
         emp.homeStation = stationKey;
       }
 
@@ -3357,6 +3552,25 @@
       }
       if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
       saveGameNow('Employee Assigned');
+    }
+
+    function sendEmployeeToNightMarket(empId, itemLabel = 'Night Market Food, Shoes & Goods 🏮', cost = 140) {
+      const emp = appState.employees.find(e => e.id === empId);
+      if (!emp) return;
+      if (!spendEmployeeMoney(emp, cost, itemLabel)) return;
+      navigateEmployeeTo(emp.id, 'night_market', `Shopping at Dubai Night Market 🏮`, { updateHome: false });
+      setTimeout(() => {
+        emp.carryingGrocery = true;
+        if (emp.meshParts?.groceryBag) emp.meshParts.groceryBag.visible = true;
+        emp.hunger = Math.min(100, (emp.hunger ?? 80) + 25);
+        emp.comfort = Math.min(100, (emp.comfort ?? 85) + 18);
+        emp.exhaustion = Math.max(0, (emp.exhaustion || 0) - 20);
+        emp.statusText = `Bought ${itemLabel} at Night Market 🏮🛍️`;
+        appState.stationUpgrades.nightMarketPurchases = (appState.stationUpgrades.nightMarketPurchases || 0) + 1;
+        awardProgressXP(25, 'Dubai Night Market Shopper');
+        if (appState.selectedEmployeeId === emp.id) selectEmployee(emp.id);
+        saveGameNow('Night Market Shopping');
+      }, 2500);
     }
 
     function spendEmployeeMoney(emp, amount, reason, recipientEmpId = null) {
@@ -3714,13 +3928,22 @@
     }
 
     function canControlEmployee(empId) {
-      if (!appState.currentAccountId || appState.currentAccountId === 'derick') return true;
+      if (!appState.currentAccountId) return false;
+      if (appState.currentAccountId === 'derick') return true;
       return appState.currentAccountId === empId;
     }
 
     function updateActiveAccountBadge() {
       const badge = document.getElementById('active-account-badge');
+      const logoutBtn = document.getElementById('header-logout-btn');
       if (!badge) return;
+      if (!appState.currentAccountId) {
+        badge.textContent = '🔑 Logged Out (Click to Log In)';
+        badge.className = 'px-2 py-1 rounded-lg bg-rose-500/25 hover:bg-rose-500/40 border border-rose-400/60 text-rose-100 font-extrabold';
+        if (logoutBtn) logoutBtn.classList.add('hidden');
+        return;
+      }
+      if (logoutBtn) logoutBtn.classList.remove('hidden');
       const acc = appState.registeredAccounts.find(a => a.id === appState.currentAccountId) || { id: 'derick', username: ADMIN_USERNAME, name: 'Derick', isAdmin: true };
       if (acc.id === 'derick' || acc.isAdmin) {
         badge.textContent = `👑 Admin: ${acc.name} (${ADMIN_USERNAME})`;
@@ -3731,16 +3954,44 @@
       }
     }
 
-    function switchToMyAccountCharacter() {
-      if (appState.currentAccountId) {
-        selectEmployee(appState.currentAccountId);
-        focusSelectedEmployee();
+    function handleGamerLogout() {
+      if (!appState.currentAccountId) {
+        openAccountModal('login');
+        return;
       }
+      const prevAcc = appState.registeredAccounts.find(a => a.id === appState.currentAccountId);
+      const prevName = prevAcc ? prevAcc.name : 'User';
+      appState.currentAccountId = null;
+      updateActiveAccountBadge();
+      if (appState.selectedEmployeeId) selectEmployee(appState.selectedEmployeeId);
+      saveGameNow('Account Logged Out');
+      appendChatMessage('agent', `🚪 <strong>${prevName}</strong> has logged out. Your account &amp; progress remain saved—click <strong>🔑 Logged Out</strong> anytime to log back in!`);
+      openAccountModal('login');
+    }
+
+    function switchToMyAccountCharacter() {
+      if (!appState.currentAccountId) {
+        openAccountModal('login');
+        return;
+      }
+      selectEmployee(appState.currentAccountId);
+      focusSelectedEmployee();
     }
 
     function openAccountModal(defaultTab = 'login') {
       const modal = document.getElementById('account-modal');
       if (!modal) return;
+      const sessionText = document.getElementById('account-session-text');
+      const modalLogoutBtn = document.getElementById('modal-logout-btn');
+      if (!appState.currentAccountId) {
+        if (sessionText) sessionText.innerHTML = `Status: <strong class="text-rose-300">Logged Out</strong> — Select or enter your recorded account below to log back in.`;
+        if (modalLogoutBtn) modalLogoutBtn.classList.add('hidden');
+      } else {
+        const cur = appState.registeredAccounts.find(a => a.id === appState.currentAccountId);
+        if (sessionText) sessionText.innerHTML = `Active Session: <strong class="text-emerald-300">${cur ? cur.name : 'Derick'}</strong> ${cur?.isAdmin ? '(Main Admin)' : '(Registered User)'}`;
+        if (modalLogoutBtn) modalLogoutBtn.classList.remove('hidden');
+      }
+
       const list = document.getElementById('registered-accounts-list');
       list.innerHTML = appState.registeredAccounts.map(acc => {
         const isCurrent = acc.id === appState.currentAccountId;
@@ -3751,7 +4002,7 @@
           <button type="button" onclick="prefillLoginAccount('${loginHandle.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 ${isCurrent ? 'bg-cyan-500/25 border-cyan-400 text-cyan-100' : 'bg-slate-950 border-slate-700 text-slate-300 hover:border-slate-500'}">
             <span>${icon} ${acc.isAdmin ? `${acc.name} (${loginHandle})` : acc.name}</span>
             <span>🔒</span>
-            ${isCurrent ? '<span class="text-[9px] text-emerald-300">(Active)</span>' : ''}
+            ${isCurrent ? '<span class="text-[9px] text-emerald-300">(Logged In)</span>' : '<span class="text-[9px] text-slate-400">(Saved)</span>'}
           </button>
         `;
       }).join('');
@@ -3920,11 +4171,37 @@
       const emp = appState.employees.find(e => e.id === appState.selectedEmployeeId);
       if (!emp) return;
       if (!canControlEmployee(emp.id)) {
-        appendChatMessage('agent', `🔒 You can only apply for jobs on your own account (or switch to <strong>👑 Derick Main Admin</strong>).`);
+        appendChatMessage('agent', `🔒 You can only apply for jobs on your own logged-in account (or switch to <strong>👑 Derick Main Admin</strong>).`);
         return;
       }
-      document.getElementById('job-applicant-label').innerHTML = `Applicant: <strong class="text-cyan-300">${emp.name}</strong> · Current Role: ${emp.role}`;
+      document.getElementById('job-applicant-label').innerHTML = `
+        Applicant: <strong class="text-cyan-300">${emp.name}</strong> · Current: <strong>${emp.role}</strong><br/>
+        Qualifications: <span class="text-amber-300 font-bold">Fitness Lv.${emp.fitnessLevel || 1}</span> · <span class="text-emerald-300 font-bold">Stamina ${Math.round(emp.energy || 90)}%</span> · <span class="text-cyan-300 font-bold">City XP: ${appState.xp || 0}</span>
+      `;
+      const resBox = document.getElementById('job-application-result');
+      if (resBox) resBox.classList.add('hidden');
+      previewSelectedJobRequirement();
       document.getElementById('job-apply-modal').classList.remove('hidden');
+    }
+
+    function previewSelectedJobRequirement() {
+      const emp = appState.employees.find(e => e.id === appState.selectedEmployeeId);
+      const preview = document.getElementById('job-requirement-preview');
+      if (!emp || !preview) return;
+      const val = document.getElementById('apply-job-select')?.value || '';
+      const [station, newRole, salaryStr, reqFitStr, reqXpStr, maxStaffStr] = val.split('|');
+      const reqFit = Number(reqFitStr || 1);
+      const reqXp = Number(reqXpStr || 0);
+      const maxStaff = Number(maxStaffStr || 3);
+      const currentStaffCount = appState.employees.filter(e => (e.homeStation === station || e.station === station) && e.id !== emp.id && (e.salary || 0) > 0).length;
+
+      preview.innerHTML = `
+        <div class="font-bold text-white mb-1">📋 Screening Criteria for ${newRole}:</div>
+        <div>• Required Fitness: <strong>Lv.${reqFit}</strong> (Yours: <span class="${(emp.fitnessLevel || 1) >= reqFit ? 'text-emerald-300' : 'text-rose-300'}">Lv.${emp.fitnessLevel || 1}</span>)</div>
+        <div>• Required Experience: <strong>${reqXp} XP</strong> (Yours: <span class="${(appState.xp || 0) >= reqXp ? 'text-emerald-300' : 'text-rose-300'}">${appState.xp || 0} XP</span>)</div>
+        <div>• Required Stamina: <strong>45%+</strong> (Yours: <span class="${(emp.energy || 0) >= 45 ? 'text-emerald-300' : 'text-rose-300'}">${Math.round(emp.energy || 0)}%</span>)</div>
+        <div>• Department Headcount: <strong>${currentStaffCount} / ${maxStaff}</strong> employees ${currentStaffCount >= maxStaff ? '<span class="text-rose-300 font-bold">(FULL - Too many employees!)</span>' : '<span class="text-emerald-300">(Openings Available)</span>'}</div>
+      `;
     }
 
     function closeJobApplyModal() {
@@ -3934,9 +4211,43 @@
     function submitJobApplication() {
       const emp = appState.employees.find(e => e.id === appState.selectedEmployeeId);
       if (!emp || !canControlEmployee(emp.id)) return;
-      const val = document.getElementById('apply-job-select')?.value || 'derick|Digital Marketing Strategist|16000';
-      const [station, newRole, salaryStr] = val.split('|');
-      const newSalary = Number(salaryStr || 15000);
+      const val = document.getElementById('apply-job-select')?.value || 'derick|Digital Marketing Associate (Derick HQ)|15500|1|0|3';
+      const [station, newRole, salaryStr, reqFitStr, reqXpStr, maxStaffStr] = val.split('|');
+      const newSalary = Number(salaryStr || 14000);
+      const reqFit = Number(reqFitStr || 1);
+      const reqXp = Number(reqXpStr || 0);
+      const maxStaff = Number(maxStaffStr || 3);
+
+      const currentStaffCount = appState.employees.filter(e =>
+        (e.homeStation === station || e.station === station) && e.id !== emp.id && (e.salary || 0) > 0
+      ).length;
+
+      const failReasons = [];
+      if (currentStaffCount >= maxStaff) {
+        failReasons.push(`Department is already at full capacity (${currentStaffCount}/${maxStaff} employees working at ${STATIONS[station]?.name || station}). Try another establishment or Night Market stall!`);
+      }
+      if ((emp.fitnessLevel || 1) < reqFit) {
+        failReasons.push(`Requires Fitness Level ${reqFit} (you are currently Lv.${emp.fitnessLevel || 1} — go jog at City Park first!).`);
+      }
+      if ((appState.xp || 0) < reqXp) {
+        failReasons.push(`Requires ${reqXp} City XP (you currently have ${appState.xp || 0} XP — complete tasks or shop first!).`);
+      }
+      if ((emp.energy || 0) < 45) {
+        failReasons.push(`Stamina is too low (${Math.round(emp.energy || 0)}%) for interview — rest or eat first!`);
+      }
+
+      const resBox = document.getElementById('job-application-result');
+      if (failReasons.length > 0) {
+        if (resBox) {
+          resBox.className = 'p-3 rounded-xl bg-rose-500/20 border border-rose-400/60 text-rose-100 text-xs leading-relaxed';
+          resBox.innerHTML = `<strong>❌ APPLICATION FAILED (Not Qualified / Full):</strong><br/>• ${failReasons.join('<br/>• ')}`;
+          resBox.classList.remove('hidden');
+        }
+        emp.logs.unshift(`${formatSimClock(appState.simMinutes)}: ❌ Failed job interview for ${newRole}`);
+        appendChatMessage('agent', `❌ <strong>Job Application Failed:</strong> <strong>${emp.name}</strong> was not accepted for <em>${newRole}</em> (${failReasons[0]}).`);
+        saveGameNow('Job Application Failed');
+        return;
+      }
 
       const isFirstJob = (emp.salary || 0) === 0;
       emp.role = newRole;
@@ -3946,12 +4257,18 @@
         emp.cash = 1000;
         emp.logs.unshift(`${formatSimClock(appState.simMinutes)}: 💵 Received AED 1,000 Hired Signing Bonus!`);
       }
+
+      if (resBox) {
+        resBox.className = 'p-3 rounded-xl bg-emerald-500/20 border border-emerald-400/60 text-emerald-100 text-xs leading-relaxed';
+        resBox.innerHTML = `<strong>✅ APPLICATION PASSED! CONGRATULATIONS!</strong><br/>You passed screening and are hired as <strong>${newRole}</strong> (AED ${newSalary.toLocaleString()}/mo)${isFirstJob ? ' + <strong>AED 1,000 signing bonus</strong>' : ''}!`;
+        resBox.classList.remove('hidden');
+      }
+
       navigateEmployeeTo(emp.id, station, `Hired as ${newRole} (AED ${newSalary.toLocaleString()}/mo) 💼`, { updateHome: true });
       awardProgressXP(35, 'Dubai Career Climber');
-      closeJobApplyModal();
       selectEmployee(emp.id);
-      saveGameNow('Job Application Approved');
-      appendChatMessage('agent', `💼 <strong>Job Application Approved!</strong> <strong>${emp.name}</strong> is now working as <strong>${newRole}</strong> at <strong>${STATIONS[station]?.name || station}</strong> (AED ${newSalary.toLocaleString()}/mo)${isFirstJob ? ' + <strong>AED 1,000 signing bonus</strong>' : ''}!`);
+      saveGameNow('Job Application Passed');
+      appendChatMessage('agent', `✅ <strong>Job Application PASSED!</strong> <strong>${emp.name}</strong> is hired as <strong>${newRole}</strong> at <strong>${STATIONS[station]?.name || station}</strong> (AED ${newSalary.toLocaleString()}/mo)!`);
     }
 
     function selectEmployee(empId) {
@@ -3965,7 +4282,7 @@
       if (permBanner) {
         if (!allowed) {
           permBanner.classList.remove('hidden');
-          document.getElementById('perm-owner-name').textContent = emp.name;
+          document.getElementById('perm-owner-name').textContent = !appState.currentAccountId ? 'Logged-Out Session (Log In)' : emp.name;
         } else {
           permBanner.classList.add('hidden');
         }
@@ -3998,13 +4315,15 @@
 
       const guardAction = (fn) => {
         if (!canControlEmployee(emp.id)) {
-          appendChatMessage('agent', `🔒 Access restricted: Only <strong>${emp.name}</strong> or <strong>👑 Derick (Main Admin)</strong> can control ${emp.name}.`);
+          appendChatMessage('agent', !appState.currentAccountId
+            ? `🔒 You are currently <strong>Logged Out</strong>. Click <strong>🔑 Logged Out</strong> in the top bar to log back into your account!`
+            : `🔒 Access restricted: Only <strong>${emp.name}</strong> or <strong>👑 Derick (Main Admin)</strong> can control ${emp.name}.`);
           return;
         }
         fn();
       };
 
-      const actionBtnIds = ['emp-atm-btn', 'emp-phone-app-btn', 'emp-coffee-btn', 'emp-clinic-coffee-btn', 'emp-toilet-btn', 'emp-bistro-btn', 'emp-grocery-btn', 'emp-books-btn', 'emp-burj-btn', 'emp-jog-btn', 'emp-rest-btn', 'emp-relax-btn', 'emp-mobile-btn', 'emp-home-btn', 'emp-apply-job-btn', 'emp-work-btn'];
+      const actionBtnIds = ['emp-atm-btn', 'emp-phone-app-btn', 'emp-coffee-btn', 'emp-clinic-coffee-btn', 'emp-toilet-btn', 'emp-bistro-btn', 'emp-grocery-btn', 'emp-books-btn', 'emp-nightmarket-btn', 'emp-burj-btn', 'emp-jog-btn', 'emp-rest-btn', 'emp-relax-btn', 'emp-mobile-btn', 'emp-home-btn', 'emp-apply-job-btn', 'emp-work-btn'];
       actionBtnIds.forEach(bid => {
         const b = document.getElementById(bid);
         if (b) {
@@ -4021,6 +4340,7 @@
       document.getElementById('emp-bistro-btn').onclick = () => guardAction(() => sendEmployeeToRestaurant(emp.id));
       document.getElementById('emp-grocery-btn').onclick = () => guardAction(() => sendEmployeeToGrocery(emp.id));
       document.getElementById('emp-books-btn').onclick = () => guardAction(() => sendEmployeeToBookstore(emp.id));
+      document.getElementById('emp-nightmarket-btn').onclick = () => guardAction(() => { sendEmployeeToNightMarket(emp.id); setCameraPreset('night_market'); });
       document.getElementById('emp-burj-btn').onclick = () => guardAction(() => {
         sendEmployeeToBurjKhalifaDate(emp.id);
         setCameraPreset('burj_khalifa');
@@ -4081,6 +4401,7 @@
         bookstore: { pos: [-19.5, 10.5, 14.5], target: [-19.5, 1.2, 2.2] },
         jewellery: { pos: [-12.5, 10.5, 9.5], target: [-12.5, 1.2, 21.5] },
         restaurant: { pos: [14.5, 10.5, 9.5], target: [14.5, 1.2, 21.5] },
+        night_market: { pos: [24.5, 11.5, 10.0], target: [24.5, 1.2, 22.0] },
         park: { pos: [1.0, 12.5, 10.0], target: [1.0, 0.5, 22.0] },
         houses: { pos: [2.0, 13.5, 22.0], target: [2.0, 1.2, 35.6] }
       };
@@ -4094,6 +4415,23 @@
       const title = document.getElementById('station-title');
       const sub = document.getElementById('station-sub');
       const body = document.getElementById('station-body');
+
+      if (stationKey === 'night_market') {
+        title.textContent = 'Dubai Night Market · 7 Vendor Stalls';
+        sub.textContent = 'Food · Clothing · Shoes · Home Depot · Second-Hand';
+        body.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-fuchsia-500/15 border border-fuchsia-400/40 text-fuchsia-100 leading-relaxed">
+            <strong>7 Active Market Stalls &amp; NPC Shoppers:</strong><br/>
+            1. Street Foods &nbsp;·&nbsp; 2. Fashion Clothing &nbsp;·&nbsp; 3. Sneakers &amp; Shoes<br/>
+            4. Home Depot Tools &nbsp;·&nbsp; 5. Second-Hand Deals &nbsp;·&nbsp; 6. Vintage &amp; 7. Snacks
+          </div>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="sendEmployeeToNightMarket(appState.selectedEmployeeId, 'Night Market Street Food & Shoes 🏮', 140)" class="py-2 rounded-xl bg-fuchsia-400 text-slate-950 font-extrabold text-[10px]">🛍️ Buy Goods (AED 140)</button>
+            <button onclick="openJobApplyModal()" class="py-2 rounded-xl bg-amber-400 text-slate-950 font-extrabold text-[10px]">💼 Apply Stall Job</button>
+          </div>
+        `;
+        return;
+      }
 
       if (stationKey === 'superiormed' || stationKey === 'clinic_coffee') {
         title.textContent = 'SuperiorMed: Longevity Clinic Dubai';
@@ -4529,6 +4867,13 @@
         return;
       }
 
+      if (lower.includes('night market') || lower.includes('stall') || lower.includes('shoes') || lower.includes('clothing') || lower.includes('home depot') || lower.includes('second hand')) {
+        setCameraPreset('night_market');
+        sendEmployeeToNightMarket(appState.selectedEmployeeId || 'derick');
+        appendChatMessage('agent', '🏮 <strong>Dubai Night Market:</strong> Exploring the <strong>7 vendor stalls</strong> (Food, Clothing, Shoes, Home Depot &amp; Second-Hand) alongside autonomous NPC shoppers!');
+        return;
+      }
+
       if (lower.includes('jewel') || lower.includes('blender') || lower.includes('maya') || lower.includes('abrar') || lower.includes('tiktok')) {
         setCameraPreset('jewellery');
         navigateEmployeeTo('derick', 'jewellery', 'Sourcing 24K Gold Collection 💎', { updateHome: false });
@@ -4802,6 +5147,9 @@
           }
         } else if (npc.activity === 'eating') {
           nParts.rightShoulder.rotation.x = -1.25 + Math.sin(elapsed * 4 + npc.phase) * 0.35;
+        } else if (npc.activity === 'shopping' || npc.activity === 'vendor') {
+          nParts.root.rotation.y += Math.sin(elapsed * 1.4 + npc.phase) * 0.008;
+          nParts.rightShoulder.rotation.x = -0.65 + Math.sin(elapsed * 3.5 + npc.phase) * 0.25;
         }
       });
 
