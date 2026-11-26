@@ -250,7 +250,7 @@
 
       <!-- Account Login/Register, Time, Weather, Save & Layout Controls -->
       <div class="flex flex-wrap items-center gap-1 text-[10px]">
-        <button id="active-account-badge" onclick="openAccountModal('login')" title="Log In, Log Out or Register New Account" class="px-2 py-1 rounded-lg bg-amber-500/25 hover:bg-amber-500/40 border border-amber-400/60 text-amber-100 font-extrabold">👑 Admin: Derick</button>
+        <button id="active-account-badge" onclick="openAccountModal('login')" title="Log In, Log Out or Register New Account" class="px-2 py-1 rounded-lg bg-cyan-500/25 hover:bg-cyan-500/40 border border-cyan-400/60 text-cyan-100 font-extrabold">👤 General Access</button>
         <button id="header-logout-btn" onclick="handleGamerLogout()" title="Log Out of Current Account" class="px-2 py-1 rounded-lg bg-rose-500/25 hover:bg-rose-500/40 border border-rose-400/50 text-rose-100 font-extrabold">🚪 Log Out</button>
         <span id="sim-clock-badge" class="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 font-mono text-amber-300 font-bold">09:15 AM</span>
         <button onclick="processMonthlyPayday()" title="Run Team Salary Payroll" class="px-2 py-1 rounded-lg bg-emerald-500/25 hover:bg-emerald-500/40 border border-emerald-400/50 text-emerald-200 font-extrabold">💰 Payday</button>
@@ -294,7 +294,7 @@
 
     <!-- Account Permission Lock Banner (Shown when logged in as Gamer viewing another person) -->
     <div id="emp-permission-banner" class="hidden p-2 rounded-xl bg-rose-500/15 border border-rose-400/45 text-[10px] text-rose-100 flex items-center justify-between gap-1.5">
-      <span>🔒 View-Only: Managed by <strong id="perm-owner-name">Owner</strong> or <strong>Derick (Admin)</strong>.</span>
+      <span>🔒 View-Only: Managed by <strong id="perm-owner-name">Account Owner</strong> (General Access).</span>
       <button onclick="switchToMyAccountCharacter()" class="px-2 py-0.5 rounded bg-cyan-400 text-slate-950 font-extrabold shrink-0">My Account</button>
     </div>
 
@@ -405,7 +405,7 @@
     <!-- AI Agent Chat Log -->
     <div id="chat-messages" class="flex-1 overflow-y-auto custom-scroll flex flex-col gap-2 pr-1 text-xs">
       <div class="p-2.5 rounded-xl bg-slate-800/90 border border-slate-700 text-slate-200 leading-relaxed">
-        Welcome to the <strong>AI 3D Office &amp; Dubai City World</strong>! Click <strong>👑 Admin: Derick</strong> in the top bar to log in or register a new gamer account (Girl or Boy, with their own house &amp; AED 0 starting balance).
+        Welcome to the <strong>AI 3D Office &amp; Dubai City World</strong>! Click <strong>👤 Account</strong> in the top bar to log in or register a new account (Girl or Boy, with your own house &amp; AED 0 starting balance).
       </div>
     </div>
 
@@ -482,7 +482,7 @@
 
       <!-- Current Session Status & Log Out Bar -->
       <div id="account-session-bar" class="p-2.5 rounded-xl bg-slate-900/95 border border-slate-700 flex items-center justify-between gap-2 text-xs">
-        <div id="account-session-text" class="text-slate-200">Logged in as <strong class="text-amber-300">Derick (Admin)</strong></div>
+        <div id="account-session-text" class="text-slate-200">Access Mode: <strong class="text-cyan-300">General</strong></div>
         <button id="modal-logout-btn" type="button" onclick="handleGamerLogout()" class="px-3 py-1 rounded-lg bg-rose-500 hover:bg-rose-400 text-white font-extrabold text-[11px] shrink-0">🚪 Log Out</button>
       </div>
 
@@ -496,7 +496,7 @@
       <form id="auth-panel-login" onsubmit="handleGamerLoginSubmit(event)" class="p-3 rounded-xl bg-slate-900/90 border border-slate-700 flex flex-col gap-2.5 text-xs">
         <label class="flex flex-col gap-1">
           <span class="text-slate-300 text-[10px] font-bold uppercase">Username / Account Name</span>
-          <input id="login-username" type="text" placeholder="Enter your username (Admin: Dcabrera)" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-400" />
+          <input id="login-username" type="text" placeholder="Enter your username" class="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-amber-400" />
         </label>
         <label class="flex flex-col gap-1">
           <span class="text-slate-300 text-[10px] font-bold uppercase">Password</span>
@@ -508,7 +508,7 @@
         </button>
 
         <div class="border-t border-slate-800 pt-2 mt-1">
-          <div class="text-[10px] font-bold text-slate-400 mb-1.5">Registered Accounts (GitHub Pages LocalStorage):</div>
+          <div class="text-[10px] font-bold text-slate-400 mb-1.5">Registered General Accounts:</div>
           <div id="registered-accounts-list" class="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto custom-scroll"></div>
         </div>
       </form>
@@ -789,9 +789,11 @@
     const MAX_OFFLINE_SECONDS = 8 * 3600; // Capped at 8 hours max offline progress (data never expires)
     const ADMIN_USERNAME = 'Dcabrera';
     const ADMIN_PASSWORD = 'qwerty';
+    const LAILA_USERNAME = 'laila';
+    const LAILA_PASSWORD = 'lailalovederick';
 
     const INITIAL_ROSTER_DATA = [
-      { id: 'derick', name: 'Derick', role: 'Head of Digital Marketing (Admin)', gender: 'male', station: 'derick', color: '#f59e0b', skinColor: 0xe0ac69, hairColor: 0x1e1b18, cash: 2500, bank: 42000, salary: 22000, energy: 96, comfort: 94, hunger: 92, exhaustion: 6, fitnessLevel: 2, fitnessXp: 40, foodStock: 92, statusText: 'Leading Marketing HQ (Partner: Laila)', logs: ['Managing Marketing HQ, SuperiorMed & Aurelia Jewellery.'] },
+      { id: 'derick', name: 'Derick', role: 'Head of Digital Marketing', gender: 'male', station: 'derick', color: '#f59e0b', skinColor: 0xe0ac69, hairColor: 0x1e1b18, cash: 2500, bank: 42000, salary: 22000, energy: 96, comfort: 94, hunger: 92, exhaustion: 6, fitnessLevel: 2, fitnessXp: 40, foodStock: 92, statusText: 'Leading Marketing HQ (Partner: Laila)', logs: ['Managing Marketing HQ, SuperiorMed & Aurelia Jewellery.'] },
       { id: 'laila', name: 'Laila', role: 'Head of Accountant · SuperiorMed Clinic', gender: 'female', station: 'superiormed', color: '#14b8a6', skinColor: 0xf1c27d, hairColor: 0x29150c, cash: 2200, bank: 39000, salary: 20000, energy: 97, comfort: 95, hunger: 90, exhaustion: 5, fitnessLevel: 2, fitnessXp: 35, foodStock: 92, statusText: 'Managing SuperiorMed Accounting (Partner: Derick)', logs: ['Partner of Derick · Pet: Pipoy Fifth Cabrera.'] },
       { id: 'kath', name: 'Kath', role: 'Admin HR · SuperiorMed Clinic', gender: 'female', station: 'superiormed', color: '#06b6d4', skinColor: 0xf1c27d, hairColor: 0x3b1f14, cash: 1450, bank: 21500, salary: 15500, energy: 95, comfort: 93, hunger: 88, exhaustion: 7, fitnessLevel: 1, fitnessXp: 20, foodStock: 88, statusText: 'Managing SuperiorMed Admin HR', logs: ['Coordinating Personalized Care HR at SuperiorMed Dubai.'] },
       { id: 'amira', name: 'Amira', role: 'Clinic Annex Receptionist', gender: 'female', station: 'clinic_annex', color: '#22d3ee', skinColor: 0xf1c27d, hairColor: 0x1c1917, cash: 1100, bank: 14200, salary: 11500, energy: 96, comfort: 94, hunger: 89, exhaustion: 6, fitnessLevel: 1, fitnessXp: 15, foodStock: 86, statusText: 'Welcoming Patients at Clinic Annex Reception', logs: ['Checking in longevity guests at SuperiorMed Clinic Annex.'] },
@@ -813,7 +815,8 @@
       lastSavedAt: Date.now(),
       currentAccountId: 'derick',
       registeredAccounts: [
-        { id: 'derick', username: ADMIN_USERNAME, name: 'Derick', isAdmin: true, pin: ADMIN_PASSWORD }
+        { id: 'derick', username: ADMIN_USERNAME, name: 'Derick', isAdmin: true, pin: ADMIN_PASSWORD },
+        { id: 'laila', username: LAILA_USERNAME, name: 'Laila', isAdmin: false, pin: LAILA_PASSWORD }
       ],
       selectedEmployeeId: 'derick',
       timeMode: 'morning',
@@ -984,13 +987,25 @@
       if (!Array.isArray(raw.employees) || raw.employees.length === 0) {
         return null;
       }
-      if (Array.isArray(raw.registeredAccounts)) {
-        const adminAcc = raw.registeredAccounts.find(a => a.id === 'derick');
-        if (adminAcc) {
-          adminAcc.username = ADMIN_USERNAME;
-          adminAcc.pin = ADMIN_PASSWORD;
-          adminAcc.isAdmin = true;
-        }
+      if (!Array.isArray(raw.registeredAccounts)) {
+        raw.registeredAccounts = [];
+      }
+      const adminAcc = raw.registeredAccounts.find(a => a.id === 'derick');
+      if (adminAcc) {
+        adminAcc.username = ADMIN_USERNAME;
+        adminAcc.pin = ADMIN_PASSWORD;
+        adminAcc.isAdmin = true;
+      } else {
+        raw.registeredAccounts.unshift({ id: 'derick', username: ADMIN_USERNAME, name: 'Derick', isAdmin: true, pin: ADMIN_PASSWORD });
+      }
+      const lailaAcc = raw.registeredAccounts.find(a => a.id === 'laila');
+      if (lailaAcc) {
+        lailaAcc.username = LAILA_USERNAME;
+        lailaAcc.name = 'Laila';
+        lailaAcc.pin = LAILA_PASSWORD;
+        lailaAcc.isAdmin = false;
+      } else {
+        raw.registeredAccounts.push({ id: 'laila', username: LAILA_USERNAME, name: 'Laila', isAdmin: false, pin: LAILA_PASSWORD });
       }
       return raw;
     }
@@ -1625,6 +1640,9 @@
         appState.currentAccountId = savedData.currentAccountId !== undefined ? savedData.currentAccountId : 'derick';
         if (Array.isArray(savedData.registeredAccounts) && savedData.registeredAccounts.length > 0) {
           appState.registeredAccounts = savedData.registeredAccounts;
+        }
+        if (!appState.registeredAccounts.some(a => a.id === 'laila')) {
+          appState.registeredAccounts.push({ id: 'laila', username: LAILA_USERNAME, name: 'Laila', isAdmin: false, pin: LAILA_PASSWORD });
         }
         appState.selectedEmployeeId = savedData.selectedEmployeeId || appState.currentAccountId || 'derick';
         appState.timeMode = savedData.timeMode || 'morning';
@@ -3938,20 +3956,16 @@
       const logoutBtn = document.getElementById('header-logout-btn');
       if (!badge) return;
       if (!appState.currentAccountId) {
-        badge.textContent = '🔑 Logged Out (Click to Log In)';
+        badge.textContent = '🔑 General Access · Log In';
         badge.className = 'px-2 py-1 rounded-lg bg-rose-500/25 hover:bg-rose-500/40 border border-rose-400/60 text-rose-100 font-extrabold';
         if (logoutBtn) logoutBtn.classList.add('hidden');
         return;
       }
       if (logoutBtn) logoutBtn.classList.remove('hidden');
-      const acc = appState.registeredAccounts.find(a => a.id === appState.currentAccountId) || { id: 'derick', username: ADMIN_USERNAME, name: 'Derick', isAdmin: true };
-      if (acc.id === 'derick' || acc.isAdmin) {
-        badge.textContent = `👑 Admin: ${acc.name} (${ADMIN_USERNAME})`;
-        badge.className = 'px-2 py-1 rounded-lg bg-amber-500/25 hover:bg-amber-500/40 border border-amber-400/60 text-amber-100 font-extrabold';
-      } else {
-        badge.textContent = `🎮 User: ${acc.name}`;
-        badge.className = 'px-2 py-1 rounded-lg bg-cyan-500/25 hover:bg-cyan-500/40 border border-cyan-400/60 text-cyan-100 font-extrabold';
-      }
+      const acc = appState.registeredAccounts.find(a => a.id === appState.currentAccountId);
+      const displayName = acc && !acc.isAdmin ? acc.name : 'General';
+      badge.textContent = `👤 Account: ${displayName} (General)`;
+      badge.className = 'px-2 py-1 rounded-lg bg-cyan-500/25 hover:bg-cyan-500/40 border border-cyan-400/60 text-cyan-100 font-extrabold';
     }
 
     function handleGamerLogout() {
@@ -3960,12 +3974,12 @@
         return;
       }
       const prevAcc = appState.registeredAccounts.find(a => a.id === appState.currentAccountId);
-      const prevName = prevAcc ? prevAcc.name : 'User';
+      const prevName = prevAcc && !prevAcc.isAdmin ? prevAcc.name : 'User';
       appState.currentAccountId = null;
       updateActiveAccountBadge();
       if (appState.selectedEmployeeId) selectEmployee(appState.selectedEmployeeId);
       saveGameNow('Account Logged Out');
-      appendChatMessage('agent', `🚪 <strong>${prevName}</strong> has logged out. Your account &amp; progress remain saved—click <strong>🔑 Logged Out</strong> anytime to log back in!`);
+      appendChatMessage('agent', `🚪 <strong>${prevName}</strong> has logged out. Your account &amp; progress remain saved—click <strong>🔑 General Access · Log In</strong> anytime to log back in!`);
       openAccountModal('login');
     }
 
@@ -3984,28 +3998,34 @@
       const sessionText = document.getElementById('account-session-text');
       const modalLogoutBtn = document.getElementById('modal-logout-btn');
       if (!appState.currentAccountId) {
-        if (sessionText) sessionText.innerHTML = `Status: <strong class="text-rose-300">Logged Out</strong> — Select or enter your recorded account below to log back in.`;
+        if (sessionText) sessionText.innerHTML = `Access Level: <strong class="text-cyan-300">General</strong> (<span class="text-rose-300">Logged Out</span>) — Log in or register a new account below.`;
         if (modalLogoutBtn) modalLogoutBtn.classList.add('hidden');
       } else {
         const cur = appState.registeredAccounts.find(a => a.id === appState.currentAccountId);
-        if (sessionText) sessionText.innerHTML = `Active Session: <strong class="text-emerald-300">${cur ? cur.name : 'Derick'}</strong> ${cur?.isAdmin ? '(Main Admin)' : '(Registered User)'}`;
+        const sessionLabel = cur && !cur.isAdmin ? cur.name : 'General Account';
+        if (sessionText) sessionText.innerHTML = `Active Session: <strong class="text-emerald-300">${sessionLabel}</strong> · Access: <strong class="text-cyan-300">General</strong>`;
         if (modalLogoutBtn) modalLogoutBtn.classList.remove('hidden');
       }
 
       const list = document.getElementById('registered-accounts-list');
-      list.innerHTML = appState.registeredAccounts.map(acc => {
-        const isCurrent = acc.id === appState.currentAccountId;
-        const emp = appState.employees.find(e => e.id === acc.id);
-        const icon = acc.isAdmin ? '👑' : (emp?.gender === 'female' ? '👧' : '👦');
-        const loginHandle = acc.username || acc.name;
-        return `
-          <button type="button" onclick="prefillLoginAccount('${loginHandle.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 ${isCurrent ? 'bg-cyan-500/25 border-cyan-400 text-cyan-100' : 'bg-slate-950 border-slate-700 text-slate-300 hover:border-slate-500'}">
-            <span>${icon} ${acc.isAdmin ? `${acc.name} (${loginHandle})` : acc.name}</span>
-            <span>🔒</span>
-            ${isCurrent ? '<span class="text-[9px] text-emerald-300">(Logged In)</span>' : '<span class="text-[9px] text-slate-400">(Saved)</span>'}
-          </button>
-        `;
-      }).join('');
+      const publicAccounts = appState.registeredAccounts.filter(acc => !acc.isAdmin);
+      if (publicAccounts.length === 0) {
+        list.innerHTML = `<span class="text-[10px] text-slate-400 italic">No registered player accounts yet. Click "Register New Gamer" to create one.</span>`;
+      } else {
+        list.innerHTML = publicAccounts.map(acc => {
+          const isCurrent = acc.id === appState.currentAccountId;
+          const emp = appState.employees.find(e => e.id === acc.id);
+          const icon = emp?.gender === 'female' ? '👧' : '👦';
+          const loginHandle = acc.username || acc.name;
+          return `
+            <button type="button" onclick="prefillLoginAccount('${loginHandle.replace(/'/g, "\\'")}')" class="px-2.5 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 ${isCurrent ? 'bg-cyan-500/25 border-cyan-400 text-cyan-100' : 'bg-slate-950 border-slate-700 text-slate-300 hover:border-slate-500'}">
+              <span>${icon} ${acc.name}</span>
+              <span>🔒</span>
+              ${isCurrent ? '<span class="text-[9px] text-emerald-300">(Logged In)</span>' : '<span class="text-[9px] text-slate-400">(General)</span>'}
+            </button>
+          `;
+        }).join('');
+      }
       document.getElementById('login-feedback').textContent = '';
       document.getElementById('reg-feedback').textContent = '';
       switchAuthTab(defaultTab);
@@ -4055,9 +4075,9 @@
         return;
       }
 
-      if (username.toLowerCase() === ADMIN_USERNAME.toLowerCase() || username.toLowerCase() === 'derick') {
+      if (username.toLowerCase() === ADMIN_USERNAME.toLowerCase()) {
         if (password !== ADMIN_PASSWORD) {
-          if (fb) fb.textContent = '🔒 Invalid password for Admin Dcabrera (Derick).';
+          if (fb) fb.textContent = '🔒 Invalid password for this account.';
           return;
         }
         appState.currentAccountId = 'derick';
@@ -4065,8 +4085,8 @@
         selectEmployee('derick');
         focusSelectedEmployee();
         closeAccountModal();
-        saveGameNow('Admin Logged In');
-        appendChatMessage('agent', `👑 Logged in as <strong>Derick (${ADMIN_USERNAME} · Main Admin)</strong> — Full admin control across all accounts unlocked.`);
+        saveGameNow('Account Logged In');
+        appendChatMessage('agent', `🔓 Logged in successfully! Access level: <strong>General</strong>.`);
         return;
       }
 
@@ -4089,7 +4109,7 @@
       focusSelectedEmployee();
       closeAccountModal();
       saveGameNow('Gamer Logged In');
-      appendChatMessage('agent', `🔓 Welcome back <strong>${acc.name}</strong>! You have exclusive access to manage your own account, house &amp; career.`);
+      appendChatMessage('agent', `🔓 Welcome back <strong>${acc.name}</strong>! Access level: <strong>General</strong> — manage your own account, house &amp; career.`);
     }
 
     function handleGamerRegisterSubmit(e) {
@@ -4171,7 +4191,7 @@
       const emp = appState.employees.find(e => e.id === appState.selectedEmployeeId);
       if (!emp) return;
       if (!canControlEmployee(emp.id)) {
-        appendChatMessage('agent', `🔒 You can only apply for jobs on your own logged-in account (or switch to <strong>👑 Derick Main Admin</strong>).`);
+        appendChatMessage('agent', `🔒 General Access: You can only apply for jobs on your own logged-in account.`);
         return;
       }
       document.getElementById('job-applicant-label').innerHTML = `
@@ -4316,8 +4336,8 @@
       const guardAction = (fn) => {
         if (!canControlEmployee(emp.id)) {
           appendChatMessage('agent', !appState.currentAccountId
-            ? `🔒 You are currently <strong>Logged Out</strong>. Click <strong>🔑 Logged Out</strong> in the top bar to log back into your account!`
-            : `🔒 Access restricted: Only <strong>${emp.name}</strong> or <strong>👑 Derick (Main Admin)</strong> can control ${emp.name}.`);
+            ? `🔒 You are currently <strong>Logged Out</strong>. Click <strong>🔑 General Access · Log In</strong> in the top bar to log back into your account!`
+            : `🔒 General Access: Only <strong>${emp.name}</strong> can control this account.`);
           return;
         }
         fn();
@@ -4372,7 +4392,7 @@
       const tasks = roleTasks[emp.id] || [{ label: `💼 Apply for / Switch Job Position`, fn: `openJobApplyModal()` }];
       document.getElementById('emp-role-tasks').innerHTML = allowed
         ? tasks.map(t => `<button onclick="${t.fn}" class="w-full text-left px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600/80 text-[10px] font-semibold text-cyan-200">${t.label}</button>`).join('')
-        : `<div class="text-[10px] text-slate-400 italic">Log in as ${emp.name} or Derick (Admin) to run actions.</div>`;
+        : `<div class="text-[10px] text-slate-400 italic">General Access: Log in to your own account to run actions.</div>`;
 
       document.getElementById('emp-logs').innerHTML = emp.logs.map(l => `<div class="px-2 py-1 rounded bg-slate-900/70 border border-slate-800">${l}</div>`).join('');
     }
@@ -4640,7 +4660,7 @@
       const emp = appState.employees.find(e => e.id === appState.selectedEmployeeId) || appState.employees[0];
       if (!emp) return;
       if (!canControlEmployee(emp.id)) {
-        appendChatMessage('agent', `🔒 You can only open your own smartphone (or switch to <strong>👑 Derick Admin</strong>).`);
+        appendChatMessage('agent', `🔒 General Access: You can only open your own smartphone.`);
         return;
       }
       useMobilePhone(emp.id);
